@@ -50,6 +50,8 @@ model BadgeConfig {
   plan        String   @default("free")
   // Design tab — card
   bgColor           String  @default("#ffffff")
+  bgGradient        Boolean @default(false)
+  bgColorEnd        String  @default("#f4f6f8")
   cornerRadius      Int     @default(8)
   borderSize        Int     @default(0)
   borderColor       String  @default("#c5c8d1")

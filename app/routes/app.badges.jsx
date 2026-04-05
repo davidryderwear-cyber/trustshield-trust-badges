@@ -120,6 +120,8 @@ export const action = async ({ request }) => {
       customCSS: String(data.customCSS || "").slice(0, 2000).replace(/(@import|expression\s*\(|javascript:|behavior\s*:|url\s*\(|\\|<|>)/gi, "/* blocked */"),
       // Design — card
       bgColor: hexOk(data.bgColor) ? data.bgColor : "#ffffff",
+      bgGradient: Boolean(data.bgGradient),
+      bgColorEnd: hexOk(data.bgColorEnd) ? data.bgColorEnd : "#f4f6f8",
       cornerRadius: clamp(data.cornerRadius, 0, 24, 8),
       borderSize: clamp(data.borderSize, 0, 8, 0),
       borderColor: hexOk(data.borderColor) ? data.borderColor : "#c5c8d1",
@@ -230,6 +232,8 @@ export default function BadgeConfig() {
   const [spacing, setSpacing] = useState(config.spacing);
   const [maxWidth, setMaxWidth] = useState(config.maxWidth);
   const [bgColor, setBgColor] = useState(config.bgColor || "#ffffff");
+  const [bgGradient, setBgGradient] = useState(config.bgGradient ?? false);
+  const [bgColorEnd, setBgColorEnd] = useState(config.bgColorEnd || "#f4f6f8");
   const [cornerRadius, setCornerRadius] = useState(config.cornerRadius ?? 8);
   const [borderSize, setBorderSize] = useState(config.borderSize ?? 0);
   const [borderColor, setBorderColor] = useState(config.borderColor || "#c5c8d1");
@@ -272,7 +276,7 @@ export default function BadgeConfig() {
     const data = {
       badges, layout, position, alignment, showOnProduct, showOnCart, showOnHome,
       iconSize, iconColor, textColor, fontSize, spacing, maxWidth, customCSS,
-      bgColor, cornerRadius, borderSize, borderColor,
+      bgColor, bgGradient, bgColorEnd, cornerRadius, borderSize, borderColor,
       paddingTop, paddingBottom, marginTop, marginBottom,
       iconBgColor, iconCornerRadius, useOriginalIconColor,
       subtitleFontSize, subtitleColor,
@@ -290,7 +294,7 @@ export default function BadgeConfig() {
   }, [
     badges, layout, position, alignment, showOnProduct, showOnCart, showOnHome,
     iconSize, iconColor, textColor, fontSize, spacing, maxWidth, customCSS,
-    bgColor, cornerRadius, borderSize, borderColor,
+    bgColor, bgGradient, bgColorEnd, cornerRadius, borderSize, borderColor,
     paddingTop, paddingBottom, marginTop, marginBottom,
     iconBgColor, iconCornerRadius, useOriginalIconColor,
     subtitleFontSize, subtitleColor, targetType, submit,
@@ -365,6 +369,59 @@ export default function BadgeConfig() {
     }));
     setBadges(newBadges);
   }, [limits.maxBadges]);
+
+  // --- PxInput: clean number + px label (like Essential) ---
+  const PxInput = ({ label, value, onChange, min = 0, max = 100 }) => (
+    <BlockStack gap="100">
+      <Text as="p" variant="bodySm" tone="subdued">{label}</Text>
+      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        <input
+          type="number"
+          min={min}
+          max={max}
+          value={value}
+          onChange={(e) => onChange(Math.min(max, Math.max(min, Number(e.target.value) || 0)))}
+          style={{
+            width: 64,
+            padding: "6px 8px",
+            borderRadius: 6,
+            border: "1px solid #c5c8d1",
+            fontSize: 14,
+            textAlign: "right",
+            background: "#fff",
+          }}
+        />
+        <Text as="span" variant="bodySm" tone="subdued">px</Text>
+      </div>
+    </BlockStack>
+  );
+
+  // --- Design Templates (full preset applied at once) ---
+  const DESIGN_TEMPLATES = [
+    { label: "Minimal", value: "minimal",   bg: "#ffffff", iconBg: "#f4f6f8", icon: "#333333", text: "#202223", border: "#e1e3e5", cornerRadius: 8,  borderSize: 0, fontSize: 14, iconSize: 32, iconCornerRadius: 4  },
+    { label: "Classic", value: "classic",   bg: "#f9fafb", iconBg: "#e3e5e7", icon: "#444444", text: "#202223", border: "#c5c8d1", cornerRadius: 8,  borderSize: 1, fontSize: 14, iconSize: 32, iconCornerRadius: 6  },
+    { label: "Ocean",   value: "ocean",     bg: "#f0f7ff", iconBg: "#dbeafe", icon: "#1d4ed8", text: "#1e3a5f", border: "#bfdbfe", cornerRadius: 10, borderSize: 1, fontSize: 14, iconSize: 32, iconCornerRadius: 8  },
+    { label: "Forest",  value: "forest",    bg: "#f0fdf4", iconBg: "#d1fae5", icon: "#059669", text: "#065f46", border: "#6ee7b7", cornerRadius: 10, borderSize: 1, fontSize: 14, iconSize: 32, iconCornerRadius: 8  },
+    { label: "Amber",   value: "amber",     bg: "#fffbeb", iconBg: "#fef3c7", icon: "#d97706", text: "#78350f", border: "#fde68a", cornerRadius: 8,  borderSize: 1, fontSize: 14, iconSize: 32, iconCornerRadius: 8  },
+    { label: "Purple",  value: "purple",    bg: "#faf5ff", iconBg: "#ede9fe", icon: "#7c3aed", text: "#3b0764", border: "#ddd6fe", cornerRadius: 10, borderSize: 1, fontSize: 14, iconSize: 32, iconCornerRadius: 8  },
+    { label: "Rose",    value: "rose",      bg: "#fff1f2", iconBg: "#ffe4e6", icon: "#e11d48", text: "#881337", border: "#fecdd3", cornerRadius: 8,  borderSize: 1, fontSize: 14, iconSize: 32, iconCornerRadius: 8  },
+    { label: "Dark",    value: "dark",      bg: "#1f2937", iconBg: "#374151", icon: "#ffffff", text: "#f9fafb", border: "#4b5563", cornerRadius: 12, borderSize: 0, fontSize: 14, iconSize: 32, iconCornerRadius: 8  },
+  ];
+
+  const applyDesignTemplate = useCallback((templateValue) => {
+    const t = DESIGN_TEMPLATES.find((d) => d.value === templateValue);
+    if (!t) return;
+    setBgColor(t.bg);
+    setIconBgColor(t.iconBg);
+    setIconColor(t.icon);
+    setTextColor(t.text);
+    setBorderColor(t.border);
+    setCornerRadius(t.cornerRadius);
+    setBorderSize(t.borderSize);
+    setFontSize(t.fontSize);
+    setIconSize(t.iconSize);
+    setIconCornerRadius(t.iconCornerRadius);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // --- Color theme presets ---
   const COLOR_THEMES = [
@@ -683,16 +740,30 @@ export default function BadgeConfig() {
   const designTab = (
     <BlockStack gap="400">
 
-      {/* ── Style Presets ── */}
+      {/* ── Template + Style Presets ── */}
       <Card>
         <BlockStack gap="400">
-          <Text as="h2" variant="headingMd">Style</Text>
+          <Text as="h2" variant="headingMd">Template</Text>
 
-          {/* Color themes */}
+          {/* Template dropdown — like Essential */}
+          <Select
+            label="Apply a template"
+            options={[
+              { label: "Choose a template...", value: "" },
+              ...DESIGN_TEMPLATES.map((t) => ({ label: t.label, value: t.value })),
+            ]}
+            value=""
+            onChange={(val) => val && applyDesignTemplate(val)}
+            helpText="Applies a coordinated colour, size and radius preset instantly."
+          />
+
+          <Divider />
+
+          {/* Colour swatches for quick palette override */}
           <BlockStack gap="200">
-            <Text as="p" variant="bodyMd" fontWeight="semibold">Color theme</Text>
+            <Text as="p" variant="bodyMd" fontWeight="semibold">Colour theme</Text>
             <Text as="p" variant="bodySm" tone="subdued">
-              Pick a preset to instantly apply a coordinated color palette.
+              Fine-tune colours without changing the full template.
             </Text>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 4 }}>
               {COLOR_THEMES.map((theme) => {
@@ -962,78 +1033,62 @@ export default function BadgeConfig() {
       <Card>
         <BlockStack gap="300">
           <Text as="h2" variant="headingMd">Card</Text>
-          <ColorField
-            label="Background color"
-            value={bgColor}
-            onChange={setBgColor}
-          />
-          <RangeSlider
-            label={`Corner radius: ${cornerRadius}px`}
-            min={0} max={24}
-            value={cornerRadius}
-            onChange={setCornerRadius}
-            output
-          />
+
+          {/* Background type */}
+          <BlockStack gap="200">
+            <Text as="p" variant="bodySm" tone="subdued">Background</Text>
+            <InlineStack gap="300">
+              <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", fontSize: 14 }}>
+                <input type="radio" name="bgType" value="solid" checked={!bgGradient} onChange={() => setBgGradient(false)} />
+                Single colour
+              </label>
+              <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", fontSize: 14 }}>
+                <input type="radio" name="bgType" value="gradient" checked={bgGradient} onChange={() => setBgGradient(true)} />
+                Gradient
+              </label>
+            </InlineStack>
+            {!bgGradient ? (
+              <ColorField label="Background colour" value={bgColor} onChange={setBgColor} />
+            ) : (
+              <InlineGrid columns={2} gap="300">
+                <ColorField label="Gradient start" value={bgColor} onChange={setBgColor} />
+                <ColorField label="Gradient end" value={bgColorEnd} onChange={setBgColorEnd} />
+              </InlineGrid>
+            )}
+          </BlockStack>
+
+          {/* Corner radius as number input */}
           <InlineGrid columns={2} gap="300">
-            <RangeSlider
-              label={`Border size: ${borderSize}px`}
-              min={0} max={8}
-              value={borderSize}
-              onChange={setBorderSize}
-              output
-            />
-            <ColorField
-              label="Border color"
-              value={borderColor}
-              onChange={setBorderColor}
-            />
+            <PxInput label="Corner radius" value={cornerRadius} onChange={setCornerRadius} min={0} max={24} />
+            <div />
+          </InlineGrid>
+
+          <InlineGrid columns={2} gap="300">
+            <PxInput label="Border size" value={borderSize} onChange={setBorderSize} min={0} max={8} />
+            <ColorField label="Border colour" value={borderColor} onChange={setBorderColor} />
           </InlineGrid>
         </BlockStack>
       </Card>
 
-      {/* ── 5. Spacing — fine-tuning, goes last ── */}
+      {/* ── 5. Spacing — clean px inputs like Essential ── */}
       <Card>
-        <BlockStack gap="300">
+        <BlockStack gap="400">
           <Text as="h2" variant="headingMd">Spacing</Text>
-          <RangeSlider
-            label={`Gap between badges: ${spacing}px`}
-            min={0} max={40}
-            value={spacing}
-            onChange={setSpacing}
-            output
-          />
-          <InlineGrid columns={2} gap="300">
-            <RangeSlider
-              label={`Inside top: ${paddingTop}px`}
-              min={0} max={60}
-              value={paddingTop}
-              onChange={setPaddingTop}
-              output
-            />
-            <RangeSlider
-              label={`Inside bottom: ${paddingBottom}px`}
-              min={0} max={60}
-              value={paddingBottom}
-              onChange={setPaddingBottom}
-              output
-            />
-          </InlineGrid>
-          <InlineGrid columns={2} gap="300">
-            <RangeSlider
-              label={`Outside top: ${marginTop}px`}
-              min={0} max={60}
-              value={marginTop}
-              onChange={setMarginTop}
-              output
-            />
-            <RangeSlider
-              label={`Outside bottom: ${marginBottom}px`}
-              min={0} max={60}
-              value={marginBottom}
-              onChange={setMarginBottom}
-              output
-            />
-          </InlineGrid>
+          <PxInput label="Gap between badges" value={spacing} onChange={setSpacing} min={0} max={40} />
+          <BlockStack gap="200">
+            <Text as="p" variant="bodySm" tone="subdued">Inside padding</Text>
+            <InlineGrid columns={2} gap="300">
+              <PxInput label="Top" value={paddingTop} onChange={setPaddingTop} min={0} max={60} />
+              <PxInput label="Bottom" value={paddingBottom} onChange={setPaddingBottom} min={0} max={60} />
+            </InlineGrid>
+          </BlockStack>
+          <BlockStack gap="200">
+            <Text as="p" variant="bodySm" tone="subdued">Outside margin</Text>
+            <InlineGrid columns={2} gap="300">
+              <PxInput label="Top" value={marginTop} onChange={setMarginTop} min={0} max={60} />
+              <PxInput label="Bottom" value={marginBottom} onChange={setMarginBottom} min={0} max={60} />
+            </InlineGrid>
+          </BlockStack>
         </BlockStack>
       </Card>
 
@@ -1199,7 +1254,9 @@ export default function BadgeConfig() {
             {badges.length > 0 ? (
               <div
                 style={{
-                  background: bgColor,
+                  background: bgGradient
+                    ? `linear-gradient(135deg, ${bgColor}, ${bgColorEnd})`
+                    : bgColor,
                   borderRadius: `${cornerRadius}px`,
                   border: borderSize > 0 ? `${borderSize}px solid ${borderColor}` : "none",
                   padding: `${paddingTop}px 12px ${paddingBottom}px`,
