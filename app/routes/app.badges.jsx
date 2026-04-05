@@ -141,7 +141,7 @@ export const action = async ({ request }) => {
       // Status & meta
       status,
       badgeName: String(data.badgeName || "Untitled Badge Set").slice(0, 200),
-      badgeType: ["single_banner", "icon_block", "minimal_icons", "payment_icons"].includes(data.badgeType) ? data.badgeType : "icon_block",
+      badgeType: ["single_banner", "icon_block", "minimal_icons", "compact_grid"].includes(data.badgeType) ? data.badgeType : "icon_block",
       startsAt: data.startsAt || null,
       endsAt: data.endsAt || null,
     };
@@ -366,6 +366,33 @@ export default function BadgeConfig() {
     setBadges(newBadges);
   }, [limits.maxBadges]);
 
+  // --- Color theme presets ---
+  const COLOR_THEMES = [
+    { name: "Clean White",   bg: "#ffffff", iconBg: "#f4f6f8", icon: "#333333", text: "#202223", border: "#e1e3e5" },
+    { name: "Soft Grey",     bg: "#f9fafb", iconBg: "#e3e5e7", icon: "#444444", text: "#202223", border: "#c5c8d1" },
+    { name: "Ocean Blue",    bg: "#f0f7ff", iconBg: "#dbeafe", icon: "#1d4ed8", text: "#1e3a5f", border: "#bfdbfe" },
+    { name: "Forest Green",  bg: "#f0fdf4", iconBg: "#d1fae5", icon: "#059669", text: "#065f46", border: "#6ee7b7" },
+    { name: "Warm Amber",    bg: "#fffbeb", iconBg: "#fef3c7", icon: "#d97706", text: "#78350f", border: "#fde68a" },
+    { name: "Purple",        bg: "#faf5ff", iconBg: "#ede9fe", icon: "#7c3aed", text: "#3b0764", border: "#ddd6fe" },
+    { name: "Rose",          bg: "#fff1f2", iconBg: "#ffe4e6", icon: "#e11d48", text: "#881337", border: "#fecdd3" },
+    { name: "Dark",          bg: "#1f2937", iconBg: "#374151", icon: "#ffffff", text: "#f9fafb", border: "#4b5563" },
+  ];
+
+  const ICON_SHAPES = [
+    { label: "None",    radius: 0  },
+    { label: "Rounded", radius: 8  },
+    { label: "Pill",    radius: 50 },
+    { label: "Circle",  radius: 999 },
+  ];
+
+  const applyColorTheme = useCallback((theme) => {
+    setBgColor(theme.bg);
+    setIconBgColor(theme.iconBg);
+    setIconColor(theme.icon);
+    setTextColor(theme.text);
+    setBorderColor(theme.border);
+  }, []);
+
   // --- Color input helper ---
   const ColorField = ({ label, value, onChange, disabled, helpText }) => (
     <TextField
@@ -396,9 +423,9 @@ export default function BadgeConfig() {
   // --- Badge type definitions ---
   const badgeTypeOptions = [
     { value: "single_banner", title: "Single banner", description: "One badge displayed as a full-width banner" },
-    { value: "icon_block", title: "Icon block", description: "Row of icons with labels below" },
+    { value: "icon_block",    title: "Icon block",    description: "Row of icons with labels below (default)" },
     { value: "minimal_icons", title: "Minimal icons", description: "Icons only, no text labels" },
-    { value: "payment_icons", title: "Payment icons", description: "Payment method icons in a compact grid" },
+    { value: "compact_grid",  title: "Compact grid",  description: "Tight grid of badges, great for many icons" },
   ];
 
   const contentTab = (
@@ -655,40 +682,249 @@ export default function BadgeConfig() {
   // =========================================================================
   const designTab = (
     <BlockStack gap="400">
-      {/* Card Styling */}
+
+      {/* ── Style Presets ── */}
+      <Card>
+        <BlockStack gap="400">
+          <Text as="h2" variant="headingMd">Style</Text>
+
+          {/* Color themes */}
+          <BlockStack gap="200">
+            <Text as="p" variant="bodyMd" fontWeight="semibold">Color theme</Text>
+            <Text as="p" variant="bodySm" tone="subdued">
+              Pick a preset to instantly apply a coordinated color palette.
+            </Text>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 4 }}>
+              {COLOR_THEMES.map((theme) => {
+                const isActive =
+                  bgColor === theme.bg &&
+                  iconBgColor === theme.iconBg &&
+                  iconColor === theme.icon &&
+                  textColor === theme.text;
+                return (
+                  <button
+                    key={theme.name}
+                    title={theme.name}
+                    onClick={() => applyColorTheme(theme)}
+                    style={{
+                      width: 48,
+                      height: 48,
+                      borderRadius: 10,
+                      background: theme.bg,
+                      border: `2.5px solid ${isActive ? "#303030" : "#e1e3e5"}`,
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      padding: 0,
+                      boxShadow: isActive ? "0 0 0 2px #303030" : "none",
+                      transition: "box-shadow 0.15s, border-color 0.15s",
+                      flexShrink: 0,
+                    }}
+                  >
+                    {/* Mini icon box preview */}
+                    <div style={{
+                      width: 26,
+                      height: 26,
+                      borderRadius: 5,
+                      background: theme.iconBg,
+                      border: `1px solid ${theme.border}`,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}>
+                      <div style={{
+                        width: 14,
+                        height: 14,
+                        borderRadius: 2,
+                        background: theme.icon,
+                        opacity: theme.bg === "#1f2937" ? 1 : 0.8,
+                      }} />
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 2 }}>
+              {COLOR_THEMES.map((theme) => {
+                const isActive =
+                  bgColor === theme.bg &&
+                  iconBgColor === theme.iconBg &&
+                  iconColor === theme.icon &&
+                  textColor === theme.text;
+                return (
+                  <span
+                    key={theme.name}
+                    style={{ fontSize: 11, color: isActive ? "#303030" : "#8c9196", fontWeight: isActive ? 600 : 400, width: 48, textAlign: "center", display: "block" }}
+                  >
+                    {theme.name.split(" ")[0]}
+                  </span>
+                );
+              })}
+            </div>
+          </BlockStack>
+
+          <Divider />
+
+          {/* Icon shape */}
+          <BlockStack gap="200">
+            <Text as="p" variant="bodyMd" fontWeight="semibold">Icon background shape</Text>
+            <InlineStack gap="300" wrap>
+              {ICON_SHAPES.map((shape) => {
+                const previewRadius = shape.radius === 999 ? "50%" : `${shape.radius}px`;
+                const isActive = iconCornerRadius === shape.radius;
+                return (
+                  <button
+                    key={shape.label}
+                    onClick={() => setIconCornerRadius(shape.radius)}
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      gap: 6,
+                      padding: "10px 14px",
+                      borderRadius: 8,
+                      border: `2px solid ${isActive ? "#303030" : "#e1e3e5"}`,
+                      background: isActive ? "#f0f0f0" : "#fff",
+                      cursor: "pointer",
+                      minWidth: 64,
+                    }}
+                  >
+                    <div style={{
+                      width: 32,
+                      height: 32,
+                      borderRadius: previewRadius,
+                      background: iconBgColor,
+                      border: `1.5px solid ${borderColor}`,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}>
+                      <div style={{ width: 16, height: 16, borderRadius: 2, background: iconColor, opacity: 0.8 }} />
+                    </div>
+                    <span style={{ fontSize: 12, fontWeight: isActive ? 600 : 400, color: isActive ? "#303030" : "#6d7175" }}>
+                      {shape.label}
+                    </span>
+                  </button>
+                );
+              })}
+            </InlineStack>
+          </BlockStack>
+
+          <Divider />
+
+          {/* Icon background color quick palette */}
+          <BlockStack gap="200">
+            <Text as="p" variant="bodyMd" fontWeight="semibold">Icon background color</Text>
+            <InlineStack gap="200" blockAlign="center" wrap>
+              {["#ffffff", "#f4f6f8", "#e3e5e7", "#dbeafe", "#d1fae5", "#fef3c7", "#ede9fe", "#ffe4e6", "#374151", "#1e40af", "#065f46", "#92400e"].map((color) => (
+                <button
+                  key={color}
+                  title={color}
+                  onClick={() => setIconBgColor(color)}
+                  style={{
+                    width: 28,
+                    height: 28,
+                    borderRadius: 6,
+                    background: color,
+                    border: `2px solid ${iconBgColor === color ? "#303030" : "#c5c8d1"}`,
+                    cursor: "pointer",
+                    padding: 0,
+                    flexShrink: 0,
+                  }}
+                />
+              ))}
+              <input
+                type="color"
+                value={iconBgColor}
+                onChange={(e) => setIconBgColor(e.target.value)}
+                title="Custom color"
+                style={{ width: 28, height: 28, borderRadius: 6, border: "2px solid #c5c8d1", cursor: "pointer", padding: 0, background: "none" }}
+              />
+            </InlineStack>
+          </BlockStack>
+        </BlockStack>
+      </Card>
+
+      {/* ── 1. Typography — top because it's the most visible change ── */}
       <Card>
         <BlockStack gap="300">
-          <Text as="h2" variant="headingMd">Card</Text>
-          <ColorField
-            label="Background color"
-            value={bgColor}
-            onChange={setBgColor}
-          />
-          <RangeSlider
-            label={`Corner radius: ${cornerRadius}px`}
-            min={0} max={24}
-            value={cornerRadius}
-            onChange={setCornerRadius}
-            output
-          />
+          <Text as="h2" variant="headingMd">Typography</Text>
           <InlineGrid columns={2} gap="300">
             <RangeSlider
-              label={`Border size: ${borderSize}px`}
-              min={0} max={8}
-              value={borderSize}
-              onChange={setBorderSize}
+              label={`Title size: ${fontSize}px`}
+              min={10} max={28}
+              value={fontSize}
+              onChange={setFontSize}
               output
             />
             <ColorField
-              label="Border color"
-              value={borderColor}
-              onChange={setBorderColor}
+              label="Title color"
+              value={textColor}
+              onChange={setTextColor}
+              disabled={!limits.customColors}
+              helpText={!limits.customColors ? "Upgrade to customize" : ""}
+            />
+          </InlineGrid>
+          <InlineGrid columns={2} gap="300">
+            <RangeSlider
+              label={`Subtitle size: ${subtitleFontSize}px`}
+              min={8} max={22}
+              value={subtitleFontSize}
+              onChange={setSubtitleFontSize}
+              output
+            />
+            <ColorField
+              label="Subtitle color"
+              value={subtitleColor}
+              onChange={setSubtitleColor}
+              disabled={!limits.customColors}
             />
           </InlineGrid>
         </BlockStack>
       </Card>
 
-      {/* Layout */}
+      {/* ── 2. Icon — second most visible ── */}
+      <Card>
+        <BlockStack gap="300">
+          <Text as="h2" variant="headingMd">Icon</Text>
+          <RangeSlider
+            label={`Icon size: ${iconSize}px`}
+            min={16} max={80}
+            value={iconSize}
+            onChange={setIconSize}
+            output
+          />
+          <Checkbox
+            label="Use original icon color"
+            checked={useOriginalIconColor}
+            onChange={setUseOriginalIconColor}
+          />
+          {!useOriginalIconColor && (
+            <ColorField
+              label="Icon color"
+              value={iconColor}
+              onChange={setIconColor}
+              disabled={!limits.customColors}
+              helpText={!limits.customColors ? "Upgrade to customize colors" : ""}
+            />
+          )}
+          <ColorField
+            label="Icon background"
+            value={iconBgColor}
+            onChange={setIconBgColor}
+          />
+          <RangeSlider
+            label={`Icon corner radius: ${iconCornerRadius}px`}
+            min={0} max={50}
+            value={iconCornerRadius}
+            onChange={setIconCornerRadius}
+            output
+          />
+        </BlockStack>
+      </Card>
+
+      {/* ── 3. Layout — arrangement decisions ── */}
       <Card>
         <BlockStack gap="300">
           <Text as="h2" variant="headingMd">Layout</Text>
@@ -722,7 +958,40 @@ export default function BadgeConfig() {
         </BlockStack>
       </Card>
 
-      {/* Spacing */}
+      {/* ── 4. Card — container styling ── */}
+      <Card>
+        <BlockStack gap="300">
+          <Text as="h2" variant="headingMd">Card</Text>
+          <ColorField
+            label="Background color"
+            value={bgColor}
+            onChange={setBgColor}
+          />
+          <RangeSlider
+            label={`Corner radius: ${cornerRadius}px`}
+            min={0} max={24}
+            value={cornerRadius}
+            onChange={setCornerRadius}
+            output
+          />
+          <InlineGrid columns={2} gap="300">
+            <RangeSlider
+              label={`Border size: ${borderSize}px`}
+              min={0} max={8}
+              value={borderSize}
+              onChange={setBorderSize}
+              output
+            />
+            <ColorField
+              label="Border color"
+              value={borderColor}
+              onChange={setBorderColor}
+            />
+          </InlineGrid>
+        </BlockStack>
+      </Card>
+
+      {/* ── 5. Spacing — fine-tuning, goes last ── */}
       <Card>
         <BlockStack gap="300">
           <Text as="h2" variant="headingMd">Spacing</Text>
@@ -768,85 +1037,7 @@ export default function BadgeConfig() {
         </BlockStack>
       </Card>
 
-      {/* Icon */}
-      <Card>
-        <BlockStack gap="300">
-          <Text as="h2" variant="headingMd">Icon</Text>
-          <RangeSlider
-            label={`Icon size: ${iconSize}px`}
-            min={16} max={80}
-            value={iconSize}
-            onChange={setIconSize}
-            output
-          />
-          <Checkbox
-            label="Use original icon color"
-            checked={useOriginalIconColor}
-            onChange={setUseOriginalIconColor}
-          />
-          {!useOriginalIconColor && (
-            <ColorField
-              label="Icon color"
-              value={iconColor}
-              onChange={setIconColor}
-              disabled={!limits.customColors}
-              helpText={!limits.customColors ? "Upgrade to customize colors" : ""}
-            />
-          )}
-          <ColorField
-            label="Icon background"
-            value={iconBgColor}
-            onChange={setIconBgColor}
-          />
-          <RangeSlider
-            label={`Icon corner radius: ${iconCornerRadius}px`}
-            min={0} max={50}
-            value={iconCornerRadius}
-            onChange={setIconCornerRadius}
-            output
-          />
-        </BlockStack>
-      </Card>
-
-      {/* Typography */}
-      <Card>
-        <BlockStack gap="300">
-          <Text as="h2" variant="headingMd">Typography</Text>
-          <InlineGrid columns={2} gap="300">
-            <RangeSlider
-              label={`Title size: ${fontSize}px`}
-              min={10} max={28}
-              value={fontSize}
-              onChange={setFontSize}
-              output
-            />
-            <ColorField
-              label="Title color"
-              value={textColor}
-              onChange={setTextColor}
-              disabled={!limits.customColors}
-              helpText={!limits.customColors ? "Upgrade to customize" : ""}
-            />
-          </InlineGrid>
-          <InlineGrid columns={2} gap="300">
-            <RangeSlider
-              label={`Subtitle size: ${subtitleFontSize}px`}
-              min={8} max={22}
-              value={subtitleFontSize}
-              onChange={setSubtitleFontSize}
-              output
-            />
-            <ColorField
-              label="Subtitle color"
-              value={subtitleColor}
-              onChange={setSubtitleColor}
-              disabled={!limits.customColors}
-            />
-          </InlineGrid>
-        </BlockStack>
-      </Card>
-
-      {/* Custom CSS */}
+      {/* ── 6. Custom CSS — advanced users only ── */}
       {limits.customCSS && (
         <Card>
           <BlockStack gap="300">
@@ -1055,8 +1246,8 @@ export default function BadgeConfig() {
                   );
                 })()}
 
-                {/* payment_icons: compact grid, smaller icons, 4+ per row */}
-                {badgeType === "payment_icons" && (
+                {/* compact_grid: tight grid, smaller icons, 4+ per row */}
+                {badgeType === "compact_grid" && (
                   <div style={{
                     display: "grid",
                     gridTemplateColumns: "repeat(auto-fill, minmax(48px, 1fr))",
