@@ -1226,7 +1226,7 @@ export default function BadgeConfig() {
         <Divider />
         <Box padding="200" borderRadius="200" background="bg-surface-secondary">
           {/* Simulated product page context */}
-          <div style={{ padding: "12px 16px", maxWidth: 400, margin: "0 auto" }}>
+          <div style={{ padding: "12px 20px" }}>
             <div style={{ fontSize: 14, color: "#666", marginBottom: 4 }}>Product Name</div>
             <div style={{ fontSize: 20, fontWeight: 700, marginBottom: 4 }}>$49.99</div>
             <div style={{
@@ -1278,7 +1278,7 @@ export default function BadgeConfig() {
                       flexDirection: "row",
                       alignItems: "center",
                       gap: 12,
-                      maxWidth: `${Math.min(maxWidth, 400)}px`,
+                      maxWidth: `${Math.min(maxWidth, 520)}px`,
                       margin: "0 auto",
                     }}>
                       <div style={{
@@ -1313,7 +1313,7 @@ export default function BadgeConfig() {
                     display: "grid",
                     gridTemplateColumns: "repeat(auto-fill, minmax(48px, 1fr))",
                     gap: `${Math.max(spacing, 6)}px`,
-                    maxWidth: `${Math.min(maxWidth, 400)}px`,
+                    maxWidth: `${Math.min(maxWidth, 520)}px`,
                     margin: "0 auto",
                     justifyItems: "center",
                   }}>
@@ -1351,7 +1351,7 @@ export default function BadgeConfig() {
                     flexWrap: "wrap",
                     justifyContent: alignment === "left" ? "flex-start" : alignment === "right" ? "flex-end" : "center",
                     gap: `${spacing}px`,
-                    maxWidth: `${Math.min(maxWidth, 400)}px`,
+                    maxWidth: `${Math.min(maxWidth, 520)}px`,
                     margin: "0 auto",
                   }}>
                     {badges.filter((b) => b.enabled).map((badge) => (
@@ -1386,7 +1386,7 @@ export default function BadgeConfig() {
                       flexWrap: "wrap",
                       justifyContent: alignment === "left" ? "flex-start" : alignment === "right" ? "flex-end" : "center",
                       gap: `${spacing}px`,
-                      maxWidth: `${Math.min(maxWidth, 400)}px`,
+                      maxWidth: `${Math.min(maxWidth, 520)}px`,
                       margin: "0 auto",
                     }}
                   >
@@ -1494,9 +1494,9 @@ export default function BadgeConfig() {
           </Banner>
         )}
 
-        <Layout>
-          {/* Left column: Tabbed content */}
-          <Layout.Section>
+        <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 58fr) minmax(0, 42fr)", gap: "20px", alignItems: "start" }}>
+          {/* Left column: Tabbed editor */}
+          <div>
             <Card padding="0">
               <Tabs tabs={tabs} selected={selectedTab} onSelect={setSelectedTab}>
                 <Box padding="400">
@@ -1504,15 +1504,13 @@ export default function BadgeConfig() {
                 </Box>
               </Tabs>
             </Card>
-          </Layout.Section>
+          </div>
 
-          {/* Right column: Live Preview (always visible) */}
-          <Layout.Section variant="oneThird">
-            <div style={{ position: "sticky", top: 16 }}>
-              {livePreview}
-            </div>
-          </Layout.Section>
-        </Layout>
+          {/* Right column: Live Preview sticky */}
+          <div style={{ position: "sticky", top: 16 }}>
+            {livePreview}
+          </div>
+        </div>
 
         {/* Add Badge Modal */}
         <Modal
