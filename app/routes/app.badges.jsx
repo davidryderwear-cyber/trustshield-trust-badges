@@ -500,35 +500,7 @@ export default function BadgeConfig() {
         </BlockStack>
       </Card>
 
-      {/* Badge Type Selector */}
-      <Card>
-        <BlockStack gap="300">
-          <Text as="h2" variant="headingMd">Badge Type</Text>
-          <InlineStack gap="300" wrap>
-            {badgeTypeOptions.map((opt) => (
-              <div
-                key={opt.value}
-                onClick={() => setBadgeType(opt.value)}
-                style={{ cursor: "pointer", flex: "1 1 0", minWidth: 120 }}
-              >
-                <Box
-                  padding="300"
-                  borderRadius="200"
-                  borderWidth="025"
-                  borderColor={badgeType === opt.value ? "border-brand" : "border"}
-                  background={badgeType === opt.value ? "bg-surface-selected" : "bg-surface-secondary"}
-                >
-                  <BlockStack gap="100">
-                    <Text as="p" variant="bodyMd" fontWeight="semibold">{opt.title}</Text>
-                    <Text as="p" variant="bodySm" tone="subdued">{opt.description}</Text>
-                  </BlockStack>
-                </Box>
-              </div>
-            ))}
-          </InlineStack>
-        </BlockStack>
-      </Card>
-
+      {/* Your Badges — content first */}
       <Card>
         <BlockStack gap="400">
           <InlineStack align="space-between" blockAlign="center">
@@ -633,6 +605,38 @@ export default function BadgeConfig() {
               ))}
             </BlockStack>
           )}
+        </BlockStack>
+      </Card>
+
+      {/* Badge Type — display choice after you've seen your badges */}
+      <Card>
+        <BlockStack gap="300">
+          <BlockStack gap="100">
+            <Text as="h2" variant="headingMd">Display style</Text>
+            <Text as="p" variant="bodySm" tone="subdued">Choose how your badges are laid out on the page.</Text>
+          </BlockStack>
+          <InlineStack gap="300" wrap>
+            {badgeTypeOptions.map((opt) => (
+              <div
+                key={opt.value}
+                onClick={() => setBadgeType(opt.value)}
+                style={{ cursor: "pointer", flex: "1 1 0", minWidth: 120 }}
+              >
+                <Box
+                  padding="300"
+                  borderRadius="200"
+                  borderWidth="025"
+                  borderColor={badgeType === opt.value ? "border-brand" : "border"}
+                  background={badgeType === opt.value ? "bg-surface-selected" : "bg-surface-secondary"}
+                >
+                  <BlockStack gap="100">
+                    <Text as="p" variant="bodyMd" fontWeight="semibold">{opt.title}</Text>
+                    <Text as="p" variant="bodySm" tone="subdued">{opt.description}</Text>
+                  </BlockStack>
+                </Box>
+              </div>
+            ))}
+          </InlineStack>
         </BlockStack>
       </Card>
 
