@@ -1,0 +1,1 @@
+Security and scope fixes from audit - remove debug route, add read_products scope, cleanup temp files

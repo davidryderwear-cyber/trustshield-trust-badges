@@ -5,7 +5,7 @@ application_url = "https://trustshield-trust-badges-production.up.railway.app"
 embedded = true
 
 [access_scopes]
-scopes = "read_themes,write_themes"
+scopes = "read_themes,write_themes,read_products"
 
 [auth]
 redirect_urls = [ "https://trustshield-trust-badges-production.up.railway.app/auth/callback", "https://trustshield-trust-badges-production.up.railway.app/auth/login/callback" ]
