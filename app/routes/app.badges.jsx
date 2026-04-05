@@ -1336,7 +1336,7 @@ export default function BadgeConfig() {
                               <div style={{ width: `${payIconSize - 4}px`, height: `${payIconSize - 4}px`, color: useOriginalIconColor ? undefined : iconColor }} dangerouslySetInnerHTML={{ __html: BADGE_ICONS[badge.iconKey]?.svg || "" }} />
                             )}
                           </div>
-                          <span style={{ fontSize: "10px", fontWeight: 500, color: textColor, textAlign: "center", lineHeight: 1.1 }}>{badge.label}</span>
+                          <span style={{ fontSize: `${fontSize}px`, fontWeight: 500, color: textColor, textAlign: "center", lineHeight: 1.1 }}>{badge.label}</span>
                         </div>
                       );
                     })}
