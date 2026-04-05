@@ -1,14 +1,14 @@
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration
 client_id = "07dc716bc6623c8daecb0e8e2bf8ef3c"
 name = "TrustShield Trust Badges"
-application_url = "https://localhost"
+application_url = "https://trustshield-trust-badges-production.up.railway.app"
 embedded = true
 
 [access_scopes]
 scopes = "read_themes,write_themes"
 
 [auth]
-redirect_urls = [ "https://localhost/auth/callback", "https://localhost/auth/login/callback" ]
+redirect_urls = [ "https://trustshield-trust-badges-production.up.railway.app/auth/callback", "https://trustshield-trust-badges-production.up.railway.app/auth/login/callback" ]
 
 [webhooks]
 api_version = "2025-01"
