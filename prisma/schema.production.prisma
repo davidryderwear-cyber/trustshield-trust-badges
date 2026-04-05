@@ -1,0 +1,124 @@
+// PRODUCTION SCHEMA -- Copy this to schema.prisma before deploying
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Session {
+  id                    String    @id
+  shop                  String
+  state                 String
+  isOnline              Boolean   @default(false)
+  scope                 String?
+  expires               DateTime?
+  accessToken           String
+  userId                BigInt?
+  firstName             String?
+  lastName              String?
+  email                 String?
+  accountOwner          Boolean   @default(false)
+  locale                String?
+  collaborator          Boolean?  @default(false)
+  emailVerified         Boolean?  @default(false)
+  refreshToken          String?
+  refreshTokenExpires   DateTime?
+
+  @@index([shop])
+}
+
+model BadgeConfig {
+  id          String   @id @default(cuid())
+  shop        String   @unique
+  badges      String   @default("[]")
+  layout      String   @default("horizontal")
+  position    String   @default("below_add_to_cart")
+  showOnProduct  Boolean @default(true)
+  showOnCart     Boolean @default(false)
+  showOnHome     Boolean @default(false)
+  iconSize    Int      @default(32)
+  iconColor   String   @default("#333333")
+  textColor   String   @default("#202223")
+  fontSize    Int      @default(16)
+  spacing     Int      @default(12)
+  alignment   String   @default("center")
+  maxWidth    Int      @default(600)
+  customCSS   String   @default("")
+  plan        String   @default("free")
+  // Design tab — card
+  bgColor           String  @default("#ffffff")
+  cornerRadius      Int     @default(8)
+  borderSize        Int     @default(0)
+  borderColor       String  @default("#c5c8d1")
+  // Design tab — spacing
+  paddingTop        Int     @default(16)
+  paddingBottom     Int     @default(16)
+  marginTop         Int     @default(20)
+  marginBottom      Int     @default(20)
+  // Design tab — icon
+  iconBgColor       String  @default("#ffffff")
+  iconCornerRadius  Int     @default(4)
+  useOriginalIconColor Boolean @default(false)
+  // Design tab — subtitle typography
+  subtitleFontSize  Int     @default(14)
+  subtitleColor     String  @default("#96a4b6")
+  // Placement tab — product targeting
+  targetType        String  @default("all")
+  targetIds         String  @default("[]")
+  // Badge metadata
+  badgeName         String  @default("My Trust Badges")
+  badgeType         String  @default("icon_block")
+  pageType          String  @default("product")
+  status            String  @default("published")
+  startsAt          DateTime?
+  endsAt            DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model CustomBadge {
+  id          String   @id @default(cuid())
+  shop        String
+  name        String
+  imageUrl    String
+  createdAt   DateTime @default(now())
+
+  @@index([shop])
+}
+
+model ABTest {
+  id                    String    @id @default(cuid())
+  shop                  String
+  name                  String
+  status                String    @default("draft")
+  trafficSplit          Int       @default(50)
+  controlConfig         String
+  variantConfig         String
+  controlImpressions    Int       @default(0)
+  controlConversions    Int       @default(0)
+  variantImpressions    Int       @default(0)
+  variantConversions    Int       @default(0)
+  winnerId              String?
+  startedAt             DateTime?
+  endedAt               DateTime?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([shop])
+  @@index([shop, status])
+}
+
+model ABEvent {
+  id          String   @id @default(cuid())
+  testId      String
+  variant     String
+  eventType   String
+  sessionId   String
+  createdAt   DateTime @default(now())
+
+  @@index([testId, variant, eventType])
+  @@index([testId, createdAt])
+}

@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trust Badges - Shopify App Demo</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif; background: #f1f1f1; color: #1a1a1a; }
+
+    /* App Shell */
+    .app-shell { display: flex; min-height: 100vh; }
+    .sidebar { width: 240px; background: #1a1a1a; color: #fff; padding: 20px 0; flex-shrink: 0; }
+    .sidebar-logo { padding: 0 20px 20px; font-size: 18px; font-weight: 700; border-bottom: 1px solid #333; margin-bottom: 10px; }
+    .sidebar-logo span { color: #96bf48; }
+    .nav-item { display: block; padding: 10px 20px; color: #aaa; text-decoration: none; font-size: 14px; cursor: pointer; transition: all 0.15s; }
+    .nav-item:hover { color: #fff; background: #333; }
+    .nav-item.active { color: #fff; background: #333; border-left: 3px solid #96bf48; }
+    .main { flex: 1; padding: 24px 32px; max-width: 1100px; }
+
+    /* Page Header */
+    .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+    .page-header h1 { font-size: 24px; font-weight: 600; }
+    .breadcrumb { font-size: 13px; color: #666; margin-bottom: 4px; cursor: pointer; }
+    .breadcrumb:hover { color: #2c6ecb; }
+
+    /* Cards */
+    .card { background: #fff; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); padding: 20px; margin-bottom: 16px; }
+    .card h2 { font-size: 16px; font-weight: 600; margin-bottom: 12px; }
+    .card-divider { border: none; border-top: 1px solid #e5e5e5; margin: 16px 0; }
+
+    /* Buttons */
+    .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 500; border: 1px solid #ccc; background: #fff; cursor: pointer; transition: all 0.15s; }
+    .btn:hover { background: #f5f5f5; }
+    .btn-primary { background: #2c6ecb; color: #fff; border-color: #2c6ecb; }
+    .btn-primary:hover { background: #1f5bb5; }
+    .btn-success { background: #008060; color: #fff; border-color: #008060; }
+    .btn-success:hover { background: #006e52; }
+    .btn-danger { background: #fff; color: #d72c0d; border-color: #d72c0d; }
+    .btn-danger:hover { background: #fef1f1; }
+    .btn-sm { padding: 4px 10px; font-size: 12px; }
+    .btn-full { width: 100%; justify-content: center; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* Badge */
+    .badge-tag { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+    .badge-info { background: #e0f0ff; color: #2c6ecb; }
+    .badge-success { background: #e0f5ee; color: #008060; }
+    .badge-warning { background: #fff3cd; color: #8a6d3b; }
+    .badge-attention { background: #fff3e0; color: #b95000; }
+
+    /* Banner */
+    .banner { padding: 16px; border-radius: 8px; margin-bottom: 16px; display: flex; gap: 12px; align-items: flex-start; }
+    .banner-info { background: #e0f0ff; border: 1px solid #b4d5fe; }
+    .banner-success { background: #e0f5ee; border: 1px solid #a4dbc1; }
+    .banner-warning { background: #fff8e6; border: 1px solid #ffd479; }
+    .banner p { font-size: 13px; line-height: 1.5; color: #333; }
+    .banner-title { font-weight: 600; margin-bottom: 4px; }
+
+    /* Layout */
+    .layout-two { display: grid; grid-template-columns: 1fr 320px; gap: 20px; }
+    .layout-three { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+    .layout-half { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .stats-row { display: flex; gap: 40px; justify-content: center; padding: 16px 0; }
+    .stat { text-align: center; }
+    .stat-value { font-size: 32px; font-weight: 700; }
+    .stat-label { font-size: 12px; color: #666; margin-top: 4px; }
+    .flex-between { display: flex; justify-content: space-between; align-items: center; }
+    .flex-center { display: flex; justify-content: center; gap: 12px; }
+    .inline-flex { display: flex; align-items: center; gap: 8px; }
+    .gap-sm { gap: 8px; }
+    .gap-md { gap: 12px; }
+    .mb-sm { margin-bottom: 8px; }
+    .mb-md { margin-bottom: 16px; }
+    .text-subdued { color: #666; font-size: 13px; }
+    .text-success { color: #008060; }
+    .text-center { text-align: center; }
+
+    /* Forms */
+    .form-group { margin-bottom: 14px; }
+    .form-group label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 4px; }
+    select, input[type="text"], input[type="color"] { width: 100%; padding: 8px 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 13px; background: #fff; }
+    select:focus, input:focus { outline: none; border-color: #2c6ecb; box-shadow: 0 0 0 2px rgba(44,110,203,0.2); }
+    input[type="range"] { width: 100%; margin-top: 4px; }
+    .range-value { font-size: 12px; color: #666; float: right; }
+    .checkbox-group { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+    .checkbox-group input { width: auto; }
+    .color-preview { width: 24px; height: 24px; border-radius: 4px; border: 1px solid #ccc; display: inline-block; vertical-align: middle; margin-right: 8px; }
+
+    /* Badge Items */
+    .badge-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: #f9f9f9; border-radius: 8px; margin-bottom: 8px; }
+    .badge-item-left { display: flex; align-items: center; gap: 12px; flex: 1; }
+    .badge-item-left svg { width: 32px; height: 32px; flex-shrink: 0; }
+    .badge-item-left input { border: 1px solid transparent; background: transparent; font-size: 14px; padding: 4px 8px; border-radius: 4px; flex: 1; }
+    .badge-item-left input:focus { border-color: #2c6ecb; background: #fff; }
+    .badge-item-actions { display: flex; gap: 6px; }
+    .empty-state { text-align: center; padding: 40px; color: #666; }
+
+    /* Preview Box */
+    .preview-box { background: #fafafa; border: 1px dashed #ddd; border-radius: 8px; padding: 24px; min-height: 100px; }
+
+    /* Modal */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+    .modal { background: #fff; border-radius: 16px; width: 700px; max-height: 80vh; overflow-y: auto; }
+    .modal-header { padding: 16px 20px; border-bottom: 1px solid #e5e5e5; display: flex; justify-content: space-between; align-items: center; }
+    .modal-header h3 { font-size: 18px; font-weight: 600; }
+    .modal-close { background: none; border: none; font-size: 24px; cursor: pointer; color: #666; }
+    .modal-body { padding: 20px; }
+    .icon-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .icon-card { border: 1px solid #e5e5e5; border-radius: 8px; padding: 16px; text-align: center; cursor: pointer; transition: all 0.15s; }
+    .icon-card:hover { border-color: #2c6ecb; background: #f0f7ff; }
+    .icon-card.disabled { opacity: 0.4; cursor: not-allowed; }
+    .icon-card svg { width: 36px; height: 36px; margin: 0 auto 8px; display: block; }
+    .icon-card .name { font-size: 12px; font-weight: 500; margin-bottom: 6px; }
+
+    /* Pricing Cards */
+    .pricing-card { position: relative; }
+    .pricing-card.popular { border: 2px solid #b95000; }
+    .price { font-size: 36px; font-weight: 700; }
+    .price-period { font-size: 14px; color: #666; }
+    .feature-list { list-style: none; padding: 0; }
+    .feature-list li { padding: 4px 0; font-size: 13px; display: flex; align-items: flex-start; gap: 8px; }
+    .feature-list li .icon-plus { color: #008060; font-weight: 700; }
+    .feature-list li .icon-minus { color: #999; }
+
+    /* Template Cards */
+    .template-badges { display: flex; gap: 20px; justify-content: center; padding: 12px 0; }
+    .template-badge { text-align: center; }
+    .template-badge svg { width: 28px; height: 28px; display: block; margin: 0 auto 4px; }
+    .template-badge .name { font-size: 11px; color: #666; }
+
+    /* Storefront Preview */
+    .storefront-preview { background: #fff; border-radius: 12px; border: 1px solid #e5e5e5; overflow: hidden; margin-top: 20px; }
+    .storefront-bar { background: #333; color: #fff; padding: 8px 16px; font-size: 12px; display: flex; align-items: center; gap: 8px; }
+    .storefront-bar .dots { display: flex; gap: 4px; }
+    .storefront-bar .dot { width: 10px; height: 10px; border-radius: 50%; }
+    .storefront-bar .dot-red { background: #ff5f57; }
+    .storefront-bar .dot-yellow { background: #febc2e; }
+    .storefront-bar .dot-green { background: #28c840; }
+    .storefront-url { background: #555; padding: 4px 12px; border-radius: 4px; font-size: 11px; flex: 1; margin-left: 8px; }
+    .storefront-body { padding: 30px; }
+    .product-mock { display: flex; gap: 30px; }
+    .product-image { width: 200px; height: 200px; background: linear-gradient(135deg, #e0e0e0, #f5f5f5); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #999; font-size: 13px; }
+    .product-info h3 { font-size: 20px; margin-bottom: 8px; }
+    .product-price { font-size: 24px; font-weight: 700; color: #008060; margin-bottom: 12px; }
+    .product-btn { background: #1a1a1a; color: #fff; border: none; padding: 12px 24px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; width: 100%; margin-bottom: 16px; }
+    .storefront-badge-area { border-top: 1px solid #eee; padding-top: 16px; }
+
+    /* Tab indicator */
+    .page-tabs { display: flex; gap: 0; margin-bottom: 20px; border-bottom: 2px solid #e5e5e5; }
+    .page-tab { padding: 10px 20px; font-size: 14px; font-weight: 500; color: #666; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.15s; }
+    .page-tab:hover { color: #1a1a1a; }
+    .page-tab.active { color: #2c6ecb; border-bottom-color: #2c6ecb; }
+
+    /* Notifications */
+    .toast { position: fixed; top: 20px; right: 20px; background: #1a1a1a; color: #fff; padding: 12px 20px; border-radius: 8px; font-size: 14px; z-index: 2000; animation: slideIn 0.3s ease; }
+    @keyframes slideIn { from { transform: translateX(100px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+    @media (max-width: 900px) {
+      .layout-two { grid-template-columns: 1fr; }
+      .layout-three { grid-template-columns: 1fr; }
+      .sidebar { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+
+  <script>
+    // SVG Icons
+    const ICONS = {
+      secure_checkout: { name: "Secure Checkout", category: "security", svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>' },
+      free_shipping: { name: "Free Shipping", category: "shipping", svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>' },
+      money_back: { name: "Money-Back Guarantee", category: "guarantee", svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>' },
+      quality: { name: "Premium Quality", category: "quality", svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>' },
+      support_24_7: { name: "24/7 Support", category: "support", svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>' },
+      ssl_secure: { name: "SSL Secured", category: "security", svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>' },
+      easy_returns: { name: "Easy Returns", category: "returns", svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>' },
+      satisfaction: { name: "100% Satisfaction", category: "guarantee", svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>' },
+      worldwide: { name: "Worldwide Delivery", category: "shipping", svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>' },
+      credit_card: { name: "Secure Payment", category: "payment", svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>' },
+      handmade: { name: "Handmade", category: "values", svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>' },
+      eco_friendly: { name: "Eco Friendly", category: "values", svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c-4.97 0-9-4.03-9-9 0-3.2 1.67-6 4.18-7.6C8.73 4.51 10.3 4 12 4c4.97 0 9 4.03 9 9s-4.03 9-9 9z"/><path d="M12 4v18"/><path d="M7 9c1.5 1 3.2 1.5 5 1.5s3.5-.5 5-1.5"/></svg>' },
+    };
+
+    const TEMPLATES = {
+      ecommerce_essentials: { name: "E-commerce Essentials", desc: "Must-have trust signals for any store", badges: ["secure_checkout","free_shipping","money_back","support_24_7"] },
+      security_focused: { name: "Security & Payment", desc: "Build confidence around checkout safety", badges: ["ssl_secure","secure_checkout","credit_card","satisfaction"] },
+      shipping_returns: { name: "Shipping & Returns", desc: "Reduce buyer hesitation around delivery", badges: ["free_shipping","worldwide","easy_returns","support_24_7"] },
+      premium_brand: { name: "Premium Brand", desc: "Emphasize quality and values", badges: ["quality","satisfaction","handmade","eco_friendly"] },
+      minimal: { name: "Minimal", desc: "Clean and simple for minimalist stores", badges: ["secure_checkout","free_shipping","money_back"] },
+    };
+
+    // State
+    let state = {
+      page: 'dashboard',
+      badges: [],
+      layout: 'row',
+      alignment: 'center',
+      iconSize: 40,
+      fontSize: 13,
+      spacing: 20,
+      maxWidth: 500,
+      iconColor: '#333333',
+      textColor: '#333333',
+      showOnProduct: true,
+      showOnCart: false,
+      showOnHome: false,
+      plan: 'free',
+      showModal: false,
+      toast: null,
+    };
+
+    function showToast(msg) {
+      state.toast = msg;
+      render();
+      setTimeout(() => { state.toast = null; render(); }, 2500);
+    }
+
+    function renderBadgePreview(badges, settings) {
+      if (!badges.length) return '<p style="color:#999;text-align:center;">Add badges to see preview</p>';
+      return `<div style="display:flex;flex-direction:${settings.layout};flex-wrap:wrap;justify-content:${settings.alignment === 'left' ? 'flex-start' : settings.alignment === 'right' ? 'flex-end' : 'center'};gap:${settings.spacing}px;max-width:${settings.maxWidth}px;margin:0 auto;">
+        ${badges.map(b => `<div style="display:flex;flex-direction:column;align-items:center;gap:6px;min-width:70px;">
+          <div style="width:${settings.iconSize}px;height:${settings.iconSize}px;color:${settings.iconColor};">${ICONS[b.iconKey]?.svg || ''}</div>
+          <span style="font-size:${settings.fontSize}px;color:${settings.textColor};text-align:center;line-height:1.3;font-weight:500;max-width:100px;">${b.label}</span>
+        </div>`).join('')}
+      </div>`;
+    }
+
+    function renderDashboard() {
+      const bc = state.badges.length;
+      const pages = [state.showOnProduct, state.showOnCart, state.showOnHome].filter(Boolean).length;
+      const limit = state.plan === 'free' ? 3 : '&infin;';
+      return `
+        ${bc === 0 ? `<div class="banner banner-info"><div><p class="banner-title">Get started by adding your first trust badge</p><p>Trust badges increase buyer confidence and can boost conversions by up to 42%. Add badges for secure checkout, free shipping, money-back guarantee, and more.</p><br><button class="btn btn-primary" onclick="state.page='badges';render()">Add Badges</button></div></div>` : ''}
+        <div class="layout-two">
+          <div>
+            <div class="card">
+              <div class="flex-between mb-md">
+                <h2>Your Badges</h2>
+                <span class="badge-tag ${state.plan === 'free' ? 'badge-info' : 'badge-success'}">${state.plan.charAt(0).toUpperCase() + state.plan.slice(1)} Plan</span>
+              </div>
+              <hr class="card-divider">
+              <div class="stats-row">
+                <div class="stat"><div class="stat-value">${bc}</div><div class="stat-label">Active Badges</div></div>
+                <div class="stat"><div class="stat-value">${pages}</div><div class="stat-label">Active Pages</div></div>
+                <div class="stat"><div class="stat-value">${limit}</div><div class="stat-label">Badge Limit</div></div>
+              </div>
+              <hr class="card-divider">
+              <div class="flex-center">
+                <button class="btn btn-primary" onclick="state.page='badges';render()">Configure Badges</button>
+                <button class="btn" onclick="state.page='templates';render()">Browse Templates</button>
+              </div>
+            </div>
+            ${bc > 0 ? `<div class="card"><h2>Storefront Preview</h2><hr class="card-divider">
+              <div class="storefront-preview">
+                <div class="storefront-bar"><div class="dots"><div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div></div><div class="storefront-url">your-store.myshopify.com/products/example</div></div>
+                <div class="storefront-body">
+                  <div class="product-mock">
+                    <div class="product-image">Product Image</div>
+                    <div class="product-info" style="flex:1;">
+                      <h3>Example Product</h3>
+                      <div class="product-price">$49.99</div>
+                      <button class="product-btn">Add to Cart</button>
+                      <div class="storefront-badge-area">${renderBadgePreview(state.badges, state)}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>` : ''}
+          </div>
+          <div>
+            <div class="card">
+              <h2>Quick Setup</h2>
+              <div style="margin-top:12px;">
+                <div class="inline-flex mb-sm"><span>${bc > 0 ? '&#10003;' : '&#9675;'}</span> Add trust badges</div>
+                <div class="inline-flex mb-sm"><span>${state.showOnProduct ? '&#10003;' : '&#9675;'}</span> Enable on product pages</div>
+                <div class="inline-flex mb-sm"><span>${state.showOnCart ? '&#10003;' : '&#9675;'}</span> Enable on cart page</div>
+              </div>
+            </div>
+            ${state.plan === 'free' ? `<div class="card">
+              <h2>Upgrade to Starter</h2>
+              <p class="text-subdued mb-md">Get unlimited badges, custom colors, remove branding, and more.</p>
+              <button class="btn btn-success btn-full" onclick="state.page='billing';render()">Upgrade - $6.99/mo</button>
+            </div>` : ''}
+          </div>
+        </div>`;
+    }
+
+    function renderBadges() {
+      const limit = state.plan === 'free' ? 3 : 999;
+      const canCustomize = state.plan !== 'free';
+      return `
+        <div class="breadcrumb" onclick="state.page='dashboard';render()">&larr; Dashboard</div>
+        <div class="page-header"><h1>Configure Badges</h1><button class="btn btn-primary" onclick="saveBadges()">Save</button></div>
+        ${state.badges.length >= limit ? '<div class="banner banner-warning"><p>You\'ve reached the badge limit on your plan. <a href="#" onclick="state.page=\'billing\';render();return false;">Upgrade</a> for more.</p></div>' : ''}
+        <div class="layout-two">
+          <div>
+            <div class="card">
+              <div class="flex-between mb-md">
+                <h2>Your Badges (${state.badges.length}/${limit})</h2>
+                <button class="btn btn-primary btn-sm" onclick="state.showModal=true;render()" ${state.badges.length >= limit ? 'disabled' : ''}>+ Add Badge</button>
+              </div>
+              <hr class="card-divider">
+              ${state.badges.length === 0 ? '<div class="empty-state"><p>No badges added yet</p><br><button class="btn btn-primary" onclick="state.showModal=true;render()">Add your first badge</button></div>' : state.badges.map((b, i) => `
+                <div class="badge-item">
+                  <div class="badge-item-left">
+                    <div style="width:32px;height:32px;color:${state.iconColor}">${ICONS[b.iconKey]?.svg || ''}</div>
+                    <input value="${b.label}" onchange="state.badges[${i}].label=this.value;render()" />
+                  </div>
+                  <div class="badge-item-actions">
+                    <button class="btn btn-sm" onclick="moveBadge(${i},-1)" ${i === 0 ? 'disabled' : ''}>&#9650;</button>
+                    <button class="btn btn-sm" onclick="moveBadge(${i},1)" ${i === state.badges.length-1 ? 'disabled' : ''}>&#9660;</button>
+                    <button class="btn btn-sm btn-danger" onclick="state.badges.splice(${i},1);render()">&#10005;</button>
+                  </div>
+                </div>`).join('')}
+            </div>
+            <div class="card">
+              <h2>Live Preview</h2>
+              <hr class="card-divider">
+              <div class="preview-box">${renderBadgePreview(state.badges, state)}</div>
+            </div>
+          </div>
+          <div>
+            <div class="card">
+              <h2>Display Settings</h2>
+              <div class="form-group"><label>Layout</label><select onchange="state.layout=this.value;render()"><option value="row" ${state.layout==='row'?'selected':''}>Horizontal</option><option value="column" ${state.layout==='column'?'selected':''}>Vertical</option></select></div>
+              <div class="form-group"><label>Alignment</label><select onchange="state.alignment=this.value;render()"><option value="left" ${state.alignment==='left'?'selected':''}>Left</option><option value="center" ${state.alignment==='center'?'selected':''}>Center</option><option value="right" ${state.alignment==='right'?'selected':''}>Right</option></select></div>
+              <div class="form-group"><label>Icon Size <span class="range-value">${state.iconSize}px</span></label><input type="range" min="20" max="80" value="${state.iconSize}" oninput="state.iconSize=+this.value;render()"></div>
+              <div class="form-group"><label>Font Size <span class="range-value">${state.fontSize}px</span></label><input type="range" min="10" max="20" value="${state.fontSize}" oninput="state.fontSize=+this.value;render()"></div>
+              <div class="form-group"><label>Spacing <span class="range-value">${state.spacing}px</span></label><input type="range" min="4" max="60" value="${state.spacing}" oninput="state.spacing=+this.value;render()"></div>
+              <div class="form-group"><label>Max Width <span class="range-value">${state.maxWidth}px</span></label><input type="range" min="200" max="800" value="${state.maxWidth}" oninput="state.maxWidth=+this.value;render()"></div>
+            </div>
+            <div class="card">
+              <h2>Colors ${!canCustomize ? '<span class="badge-tag badge-warning">Upgrade</span>' : ''}</h2>
+              <div class="form-group"><label><span class="color-preview" style="background:${state.iconColor}"></span> Icon Color</label><input type="color" value="${state.iconColor}" onchange="state.iconColor=this.value;render()" ${!canCustomize?'disabled':''}></div>
+              <div class="form-group"><label><span class="color-preview" style="background:${state.textColor}"></span> Text Color</label><input type="color" value="${state.textColor}" onchange="state.textColor=this.value;render()" ${!canCustomize?'disabled':''}></div>
+            </div>
+            <div class="card">
+              <h2>Show On</h2>
+              <div class="checkbox-group"><input type="checkbox" ${state.showOnProduct?'checked':''} onchange="state.showOnProduct=this.checked;render()"> Product pages</div>
+              <div class="checkbox-group"><input type="checkbox" ${state.showOnCart?'checked':''} onchange="state.showOnCart=this.checked;render()" ${state.plan==='free'?'disabled':''}> Cart page ${state.plan==='free'?'<span class="text-subdued">(Upgrade)</span>':''}</div>
+              <div class="checkbox-group"><input type="checkbox" ${state.showOnHome?'checked':''} onchange="state.showOnHome=this.checked;render()"> Home page</div>
+            </div>
+          </div>
+        </div>
+        ${state.showModal ? renderAddModal() : ''}`;
+    }
+
+    function renderAddModal() {
+      const added = state.badges.map(b => b.iconKey);
+      return `<div class="modal-overlay" onclick="if(event.target===this){state.showModal=false;render()}">
+        <div class="modal">
+          <div class="modal-header"><h3>Add a Trust Badge</h3><button class="modal-close" onclick="state.showModal=false;render()">&times;</button></div>
+          <div class="modal-body">
+            <div class="icon-grid">
+              ${Object.entries(ICONS).map(([key, icon]) => {
+                const isAdded = added.includes(key);
+                return `<div class="icon-card ${isAdded?'disabled':''}" onclick="${isAdded?'':'addBadge(\''+key+'\')'}">
+                  <div style="color:${isAdded?'#ccc':'#333'}">${icon.svg}</div>
+                  <div class="name">${icon.name}</div>
+                  <span class="badge-tag badge-info">${icon.category}</span>
+                  <div style="margin-top:8px"><button class="btn btn-sm ${isAdded?'':'btn-primary'}" ${isAdded?'disabled':''}>${isAdded?'Added':'Add'}</button></div>
+                </div>`;
+              }).join('')}
+            </div>
+          </div>
+        </div>
+      </div>`;
+    }
+
+    function renderTemplates() {
+      return `
+        <div class="breadcrumb" onclick="state.page='dashboard';render()">&larr; Dashboard</div>
+        <div class="page-header"><h1>Badge Templates</h1></div>
+        <p class="text-subdued mb-md">One-click badge sets to get you started fast</p>
+        ${state.badges.length > 0 ? '<div class="banner banner-warning"><p>Applying a template will replace your current badges.</p></div>' : ''}
+        <div class="layout-half">
+          ${Object.entries(TEMPLATES).map(([key, t]) => `
+            <div class="card">
+              <div class="flex-between mb-sm"><h2>${t.name}</h2><span class="badge-tag badge-info">${t.badges.length} badges</span></div>
+              <p class="text-subdued mb-md">${t.desc}</p>
+              <hr class="card-divider">
+              <div class="template-badges">
+                ${t.badges.map(bk => `<div class="template-badge"><div style="color:#333">${ICONS[bk]?.svg||''}</div><div class="name">${ICONS[bk]?.name||''}</div></div>`).join('')}
+              </div>
+              <hr class="card-divider">
+              <button class="btn btn-primary btn-full" onclick="applyTemplate('${key}')">Apply Template</button>
+            </div>`).join('')}
+        </div>`;
+    }
+
+    function renderBilling() {
+      const plans = [
+        { key:'free', name:'Free', price:'$0', period:'forever', features:['Up to 3 trust badges','36 built-in icons','Product page display','Home page display'], limits:['No custom colors','No cart page','No custom CSS','Branding shown'] },
+        { key:'starter', name:'Starter', price:'$6.99', period:'/month', trial:'7-day free trial', features:['Unlimited badges','Custom icon & text colors','Custom icon uploads','Remove branding','All layouts'], limits:['No cart page','No tag targeting','No A/B testing'] },
+        { key:'essential', name:'Essential', price:'$9.99', period:'/month', popular:true, trial:'7-day free trial', features:['Everything in Starter, plus:','Cart page badges','Tag targeting','Geolocation targeting','Translations','A/B testing','Priority support'], limits:['No custom CSS'] },
+        { key:'professional', name:'Professional', price:'$29.99', period:'/month', trial:'7-day free trial', features:['Everything in Essential, plus:','Custom CSS injection','Advanced analytics','Dedicated support','Early access to features'], limits:[] },
+      ];
+      return `
+        <div class="breadcrumb" onclick="state.page='dashboard';render()">&larr; Dashboard</div>
+        <div class="page-header"><h1>Pricing Plans</h1></div>
+        <div class="layout-three">
+          ${plans.map(p => `
+            <div class="card pricing-card ${p.popular?'popular':''}">
+              <div class="flex-between mb-sm">
+                <h2>${p.name}</h2>
+                ${p.popular ? '<span class="badge-tag badge-attention">Most Popular</span>' : ''}
+                ${state.plan === p.key ? '<span class="badge-tag badge-success">Current</span>' : ''}
+              </div>
+              <div class="inline-flex" style="align-items:baseline;margin-bottom:8px;">
+                <span class="price">${p.price}</span>
+                <span class="price-period">${p.period}</span>
+              </div>
+              ${p.trial ? '<p class="text-success mb-md" style="font-size:13px;">'+p.trial+'</p>' : '<div class="mb-md"></div>'}
+              <hr class="card-divider">
+              <ul class="feature-list">
+                ${p.features.map(f => '<li><span class="icon-plus">+</span> '+f+'</li>').join('')}
+                ${p.limits.map(l => '<li><span class="icon-minus">-</span> <span style="color:#999">'+l+'</span></li>').join('')}
+              </ul>
+              <hr class="card-divider">
+              ${state.plan === p.key ? '<button class="btn btn-full" disabled>Current Plan</button>' : p.key === 'free' ? '' : `<button class="btn ${p.popular?'btn-success':'btn-primary'} btn-full" onclick="upgradePlan('${p.key}')">${state.plan==='free'?'Start Free Trial':'Upgrade'}</button>`}
+            </div>`).join('')}
+        </div>`;
+    }
+
+    // Actions
+    function addBadge(key) {
+      const limit = state.plan === 'free' ? 3 : 999;
+      if (state.badges.length >= limit) return;
+      state.badges.push({ id: Date.now(), iconKey: key, label: ICONS[key].name, enabled: true });
+      state.showModal = false;
+      render();
+    }
+
+    function moveBadge(i, dir) {
+      const t = i + dir;
+      if (t < 0 || t >= state.badges.length) return;
+      [state.badges[i], state.badges[t]] = [state.badges[t], state.badges[i]];
+      render();
+    }
+
+    function saveBadges() { showToast('Settings saved!'); }
+
+    function applyTemplate(key) {
+      const t = TEMPLATES[key];
+      state.badges = t.badges.map((bk, i) => ({ id: Date.now()+i, iconKey: bk, label: ICONS[bk].name, enabled: true }));
+      showToast(`"${t.name}" template applied!`);
+      state.page = 'badges';
+      render();
+    }
+
+    function upgradePlan(plan) {
+      state.plan = plan;
+      showToast(`Upgraded to ${plan.charAt(0).toUpperCase()+plan.slice(1)} plan!`);
+      render();
+    }
+
+    function render() {
+      let content = '';
+      switch(state.page) {
+        case 'dashboard': content = renderDashboard(); break;
+        case 'badges': content = renderBadges(); break;
+        case 'templates': content = renderTemplates(); break;
+        case 'billing': content = renderBilling(); break;
+      }
+
+      document.getElementById('app').innerHTML = `
+        <div class="app-shell">
+          <div class="sidebar">
+            <div class="sidebar-logo"><span>Trust</span> Badges</div>
+            <a class="nav-item ${state.page==='dashboard'?'active':''}" onclick="state.page='dashboard';render()">Dashboard</a>
+            <a class="nav-item ${state.page==='badges'?'active':''}" onclick="state.page='badges';render()">Configure Badges</a>
+            <a class="nav-item ${state.page==='templates'?'active':''}" onclick="state.page='templates';render()">Templates</a>
+            <a class="nav-item ${state.page==='billing'?'active':''}" onclick="state.page='billing';render()">Upgrade</a>
+          </div>
+          <div class="main">${content}</div>
+        </div>
+        ${state.toast ? `<div class="toast">${state.toast}</div>` : ''}`;
+    }
+
+    render();
+  </script>
+</body>
+</html>

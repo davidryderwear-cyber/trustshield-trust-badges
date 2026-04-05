@@ -1,0 +1,20 @@
+api_version = "2025-01"
+uid = "83f08cbb-aa88-01b9-d3ec-b52c58257a6b4d3ce245"
+
+[[extensions]]
+name = "Trust Badges"
+handle = "trust-badges-block"
+type = "theme"
+
+  [[extensions.targeting]]
+  module = "./blocks/trust-badges.liquid"
+  target = "section"
+
+  [[extensions.targeting]]
+  module = "./blocks/trust-badges.liquid"
+  target = "block"
+
+  # Declare metafield access so the Liquid block can read badge config
+  [[extensions.metafields]]
+  namespace = "trust_badges"
+  key = "config"

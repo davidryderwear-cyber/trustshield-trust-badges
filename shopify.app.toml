@@ -1,0 +1,36 @@
+# Learn more at https://shopify.dev/docs/apps/tools/cli/configuration
+client_id = "07dc716bc6623c8daecb0e8e2bf8ef3c"
+name = "TrustShield Trust Badges"
+application_url = "https://localhost"
+embedded = true
+
+[access_scopes]
+scopes = "read_themes,write_themes"
+
+[auth]
+redirect_urls = [ "https://localhost/auth/callback", "https://localhost/auth/login/callback" ]
+
+[webhooks]
+api_version = "2025-01"
+
+  # Webhook subscriptions will be configured when deploying to production
+  # [[webhooks.subscriptions]]
+  # topics = ["app/uninstalled"]
+  # uri = "/webhooks"
+
+  # [[webhooks.subscriptions]]
+  # topics = ["app_subscriptions/update"]
+  # uri = "/webhooks"
+
+  # Privacy compliance URLs will be set when deploying to production hosting
+  # [webhooks.privacy_compliance]
+  # customer_data_request_url = "https://your-app-domain.com/webhooks"
+  # customer_deletion_url = "https://your-app-domain.com/webhooks"
+  # shop_deletion_url = "https://your-app-domain.com/webhooks"
+
+[pos]
+embedded = false
+
+[build]
+automatically_update_urls_on_dev = true
+dev_store_url = "trustshield-test-store.myshopify.com"

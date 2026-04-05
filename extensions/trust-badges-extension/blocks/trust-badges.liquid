@@ -1,0 +1,662 @@
+{% comment %}
+  Trust Badges Block
+  Reads badge config from shop metafield (synced from admin app).
+  Falls back to theme editor settings if metafield is empty.
+{% endcomment %}
+
+{% liquid
+  assign meta_config = shop.metafields.trust_badges.config.value
+  assign use_metafield = false
+  if meta_config != blank and meta_config.badges != blank and meta_config.badges.size > 0
+    assign use_metafield = true
+  endif
+%}
+
+<div
+  id="trust-badges-{{ block.id }}"
+  class="trust-badges-container"
+  data-app-url="{{ shop.url }}/apps/trust-badges"
+  style="
+    max-width: {% if use_metafield %}{{ meta_config.maxWidth }}{% else %}{{ block.settings.max_width }}{% endif %}px;
+    margin: {% if use_metafield %}{{ meta_config.marginTop | default: 20 }}px auto {{ meta_config.marginBottom | default: 20 }}px{% else %}{{ block.settings.vertical_margin }}px auto{% endif %};
+    padding: {% if use_metafield %}{{ meta_config.paddingTop | default: 16 }}px 12px {{ meta_config.paddingBottom | default: 16 }}px{% else %}{{ block.settings.padding }}px{% endif %};
+    {% if use_metafield %}
+      background-color: {{ meta_config.bgColor | default: '#ffffff' }};
+      border-radius: {{ meta_config.cornerRadius | default: 8 }}px;
+      {% if meta_config.borderSize > 0 %}
+        border: {{ meta_config.borderSize }}px solid {{ meta_config.borderColor | default: '#c5c8d1' }};
+      {% endif %}
+    {% endif %}
+  "
+>
+  {% liquid
+    if use_metafield
+      case meta_config.alignment
+        when 'left'
+          assign justify = 'flex-start'
+        when 'right'
+          assign justify = 'flex-end'
+        else
+          assign justify = 'center'
+      endcase
+    endif
+  %}
+  <div
+    class="trust-badges-wrapper"
+    style="
+      display: flex;
+      flex-direction: {% if use_metafield %}{% if meta_config.layout == 'vertical' %}column{% else %}row{% endif %}{% else %}{{ block.settings.layout }}{% endif %};
+      flex-wrap: wrap;
+      justify-content: {% if use_metafield %}{{ justify }}{% else %}space-evenly{% endif %};
+      gap: {% if use_metafield %}{{ meta_config.spacing | default: 12 }}px{% else %}0{% endif %};
+    "
+  >
+    {% if use_metafield %}
+      {% comment %} Dynamic badges from admin app via metafield {% endcomment %}
+      {% liquid
+        assign icon_bg = meta_config.iconBgColor | default: '#ffffff'
+        assign icon_has_bg = false
+        if icon_bg != '#ffffff' and icon_bg != '#FFFFFF'
+          assign icon_has_bg = true
+        endif
+        assign use_original_color = meta_config.useOriginalIconColor | default: false
+      %}
+      {% for badge in meta_config.badges %}
+        <div class="trust-badge-item" style="
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 4px;
+          flex: {% if meta_config.layout == 'horizontal' %}1 1 0{% else %}none{% endif %};
+          min-width: 0;
+        ">
+          <div class="trust-badge-icon" style="
+            width: {{ meta_config.iconSize }}px;
+            height: {{ meta_config.iconSize }}px;
+            {% unless use_original_color %}color: {{ meta_config.iconColor }};{% endunless %}
+            {% if icon_has_bg %}
+              background-color: {{ icon_bg }};
+              border-radius: {{ meta_config.iconCornerRadius | default: 4 }}px;
+            {% endif %}
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+          ">
+            {% if badge.type == 'custom' and badge.imageUrl != blank %}
+              <img src="{{ badge.imageUrl }}" alt="{{ badge.label }}" width="{{ meta_config.iconSize | minus: 4 }}" height="{{ meta_config.iconSize | minus: 4 }}" style="width:{{ meta_config.iconSize | minus: 4 }}px;height:{{ meta_config.iconSize | minus: 4 }}px;object-fit:contain;" loading="lazy">
+            {% else %}
+              {{ badge.svg }}
+            {% endif %}
+          </div>
+          <span class="trust-badge-label" style="
+            font-size: {{ meta_config.fontSize }}px;
+            color: {{ meta_config.textColor }};
+            text-align: center;
+            line-height: 1.2;
+            font-weight: 600;
+            word-break: break-word;
+          ">
+            {{ badge.label }}
+          </span>
+          {% if badge.subtitle != blank %}
+            <span class="trust-badge-subtitle" style="
+              font-size: {{ meta_config.subtitleFontSize | default: 14 }}px;
+              color: {{ meta_config.subtitleColor | default: '#96a4b6' }};
+              text-align: center;
+              line-height: 1.3;
+              font-weight: 400;
+              margin-top: -2px;
+              word-break: break-word;
+            ">
+              {{ badge.subtitle }}
+            </span>
+          {% endif %}
+        </div>
+      {% endfor %}
+    {% else %}
+      {% comment %} Fallback: static badges from theme editor settings {% endcomment %}
+      {% for i in (1..6) %}
+        {% assign icon_setting = 'icon_' | append: i %}
+        {% assign label_setting = 'label_' | append: i %}
+        {% assign label_value = block.settings[label_setting] %}
+
+        {% if label_value != blank %}
+          <div class="trust-badge-item" style="
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            min-width: 70px;
+          ">
+            <div class="trust-badge-icon" style="
+              width: {{ block.settings.icon_size }}px;
+              height: {{ block.settings.icon_size }}px;
+              color: {{ block.settings.icon_color }};
+            ">
+              {% assign icon_value = block.settings[icon_setting] %}
+              {% case icon_value %}
+                {% when 'lock' %}
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                {% when 'truck' %}
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+                {% when 'refresh' %}
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                {% when 'shield' %}
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                {% when 'star' %}
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>
+                {% when 'check' %}
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                {% when 'card' %}
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                {% when 'globe' %}
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                {% when 'bell' %}
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                {% when 'heart' %}
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                {% when 'return' %}
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+              {% endcase %}
+            </div>
+            <span class="trust-badge-label" style="
+              font-size: {{ block.settings.font_size }}px;
+              color: {{ block.settings.text_color }};
+              text-align: center;
+              line-height: 1.3;
+              font-weight: 500;
+            ">
+              {{ label_value }}
+            </span>
+          </div>
+        {% endif %}
+      {% endfor %}
+    {% endif %}
+  </div>
+
+  {% comment %} Branding removed — re-enable for free plan users in production {% endcomment %}
+</div>
+
+{% comment %} Auto-positioning Script: ensures badges appear below buy buttons {% endcomment %}
+<script>
+(function() {
+  function repositionBadges() {
+    var container = document.getElementById('trust-badges-{{ block.id }}');
+    if (!container) return;
+
+    // ===== PRODUCT PAGE: Position after buy buttons =====
+    // Find the visible buy buttons (Add to cart / Buy it now)
+    var buyButton = document.querySelector('button[name="add"], .shopify-payment-button');
+    if (!buyButton) return;
+
+    // Get our badge block wrapper (the shopify-block parent)
+    var badgeBlock = container.closest('.shopify-block') || container;
+
+    // Find the section container that holds all product info blocks
+    var sectionContainer = container.closest('product-info') || container.closest('.product__info-container');
+    if (!sectionContainer) return;
+
+    // Find which direct child of sectionContainer has the buy buttons
+    var children = Array.from(sectionContainer.children);
+    var buyChild = null;
+    for (var i = 0; i < children.length; i++) {
+      if (children[i].querySelector('button[name="add"], .shopify-payment-button')) {
+        buyChild = children[i];
+        break;
+      }
+    }
+
+    if (buyChild && badgeBlock && buyChild !== badgeBlock) {
+      var buyIdx = children.indexOf(buyChild);
+      var badgeIdx = children.indexOf(badgeBlock);
+      // Only move if badges are currently before the buy buttons
+      if (badgeIdx >= 0 && buyIdx >= 0 && badgeIdx < buyIdx) {
+        buyChild.after(badgeBlock);
+      }
+    }
+
+    // ===== CART DRAWER: Inject badges when drawer opens =====
+    // No flag — always re-check DOM since Dawn section rendering replaces drawer HTML
+    function tryInjectDrawerBadges() {
+      var drawerFooter = document.querySelector('cart-drawer .drawer__footer') || document.querySelector('.cart-drawer__footer');
+      if (drawerFooter && !drawerFooter.querySelector('.trust-badges-cart-clone')) {
+        var clone = container.cloneNode(true);
+        clone.id = '';
+        clone.classList.add('trust-badges-cart-clone');
+        clone.style.padding = '10px 8px 4px';
+        clone.style.margin = '8px 0 0';
+        clone.style.maxWidth = '100%';
+        // Scale down for narrower cart drawer
+        var cloneWrapper = clone.querySelector('.trust-badges-wrapper');
+        if (cloneWrapper) { cloneWrapper.style.gap = '8px'; cloneWrapper.style.flexWrap = 'nowrap'; cloneWrapper.style.justifyContent = 'space-evenly'; cloneWrapper.style.width = '100%'; }
+        clone.querySelectorAll('.trust-badge-icon').forEach(function(ic) { ic.style.width = '28px'; ic.style.height = '28px'; });
+        clone.querySelectorAll('.trust-badge-label').forEach(function(lb) { lb.style.fontSize = '11px'; lb.style.fontWeight = '600'; });
+        clone.querySelectorAll('.trust-badge-subtitle').forEach(function(st) { st.style.fontSize = '9px'; });
+        clone.querySelectorAll('.trust-badge-item').forEach(function(it) { it.style.flex = '1'; it.style.minWidth = '0'; it.style.gap = '2px'; });
+        drawerFooter.appendChild(clone);
+        return true;
+      }
+      return false;
+    }
+    // Retry with increasing delay to outlast Dawn's section re-render
+    function retryInject() {
+      var delays = [300, 600, 1000, 1500, 2000, 3000];
+      delays.forEach(function(d) { setTimeout(tryInjectDrawerBadges, d); });
+    }
+    // Hook: intercept fetch for cart events (add/change/update + section rendering)
+    var origFetchForDrawer = window.fetch;
+    if (origFetchForDrawer) {
+      window.fetch = function() {
+        var url = typeof arguments[0] === 'string' ? arguments[0] : (arguments[0]?.url || '');
+        var result = origFetchForDrawer.apply(this, arguments);
+        if (url.indexOf('/cart') !== -1) {
+          result.then(function() { retryInject(); });
+        }
+        return result;
+      };
+    }
+    // Watch for any DOM changes inside cart-drawer (catches section re-renders)
+    var cartDrawer = document.querySelector('cart-drawer');
+    if (cartDrawer) {
+      var drawerObserver = new MutationObserver(function() { tryInjectDrawerBadges(); });
+      drawerObserver.observe(cartDrawer, { childList: true, subtree: true });
+    }
+    tryInjectDrawerBadges();
+  }
+
+  // Run after DOM is fully loaded to ensure all blocks exist
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', repositionBadges);
+  } else {
+    repositionBadges();
+  }
+})();
+</script>
+
+{% comment %} A/B Testing Script {% endcomment %}
+{% if use_metafield and meta_config.abTest %}
+<script>
+(function() {
+  try {
+    var container = document.getElementById('trust-badges-{{ block.id }}');
+    if (!container) return;
+
+    var abTest = {{ meta_config.abTest | json }};
+    if (!abTest || typeof abTest !== 'object' || !abTest.testId) return;
+
+    var storageKey = 'tb_ab_' + abTest.testId;
+    var variant = localStorage.getItem(storageKey);
+
+    // Assign variant if not already assigned
+    if (variant !== 'control' && variant !== 'variant') {
+      variant = (Math.random() * 100 < (abTest.split || 50)) ? 'variant' : 'control';
+      try { localStorage.setItem(storageKey, variant); } catch(e) {}
+    }
+
+    // Generate session ID for dedup (stronger entropy)
+    var sidKey = 'tb_sid';
+    var sid = sessionStorage.getItem(sidKey);
+    if (!sid) {
+      if (window.crypto && window.crypto.getRandomValues) {
+        var arr = new Uint8Array(12);
+        window.crypto.getRandomValues(arr);
+        sid = Array.from(arr, function(b) { return b.toString(16).padStart(2,'0'); }).join('');
+      } else {
+        sid = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 8);
+      }
+      try { sessionStorage.setItem(sidKey, sid); } catch(e) {}
+    }
+
+    // Safe URL encoding helper
+    var enc = encodeURIComponent;
+
+    // Track impression
+    var appUrl = container.getAttribute('data-app-url') || '';
+    if (appUrl) {
+      new Image().src = appUrl + '/api/ab-track?testId=' + enc(abTest.testId) +
+        '&variant=' + enc(variant) + '&event=impression&sid=' + enc(sid);
+    }
+
+    // If variant, replace badges safely
+    if (variant === 'variant' && abTest.variant && abTest.variant.badges && abTest.variant.badges.length > 0) {
+      var wrapper = container.querySelector('.trust-badges-wrapper');
+      if (!wrapper) return;
+
+      var vBadges = abTest.variant.badges;
+      var vConfig = abTest.variant;
+
+      // Clear existing and rebuild via DOM (safer than innerHTML for SVGs)
+      while (wrapper.firstChild) wrapper.removeChild(wrapper.firstChild);
+
+      for (var i = 0; i < vBadges.length; i++) {
+        var b = vBadges[i];
+        if (!b || !b.label) continue;
+
+        var item = document.createElement('div');
+        item.className = 'trust-badge-item';
+        item.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:4px;flex:1 1 0;min-width:0;';
+
+        var iconDiv = document.createElement('div');
+        iconDiv.className = 'trust-badge-icon';
+        var iconBg = vConfig.iconBgColor && vConfig.iconBgColor !== '#ffffff' ? 'background-color:' + vConfig.iconBgColor + ';border-radius:' + (vConfig.iconCornerRadius || 4) + 'px;' : '';
+        iconDiv.style.cssText = 'width:' + (vConfig.iconSize || 32) + 'px;height:' + (vConfig.iconSize || 32) + 'px;color:' + (vConfig.iconColor || '#333') + ';display:flex;align-items:center;justify-content:center;flex-shrink:0;' + iconBg;
+
+        if (b.type === 'custom' && b.imageUrl) {
+          var img = document.createElement('img');
+          img.src = b.imageUrl;
+          img.alt = b.label;
+          img.width = vConfig.iconSize || 40;
+          img.height = vConfig.iconSize || 40;
+          img.style.cssText = 'width:100%;height:100%;object-fit:contain;';
+          img.loading = 'lazy';
+          iconDiv.appendChild(img);
+        } else if (b.svg) {
+          // Parse SVG safely via DOMParser instead of innerHTML
+          try {
+            var parser = new DOMParser();
+            var svgDoc = parser.parseFromString(b.svg, 'image/svg+xml');
+            var svgEl = svgDoc.documentElement;
+            if (svgEl && svgEl.tagName === 'svg') {
+              iconDiv.appendChild(document.importNode(svgEl, true));
+            }
+          } catch(e) { /* skip broken SVG */ }
+        }
+
+        var label = document.createElement('span');
+        label.className = 'trust-badge-label';
+        label.style.cssText = 'font-size:' + (vConfig.fontSize || 16) + 'px;color:' + (vConfig.textColor || '#202223') + ';text-align:center;line-height:1.2;font-weight:600;word-break:break-word;';
+        label.textContent = b.label;
+
+        item.appendChild(iconDiv);
+        item.appendChild(label);
+
+        if (b.subtitle) {
+          var sub = document.createElement('span');
+          sub.className = 'trust-badge-subtitle';
+          sub.style.cssText = 'font-size:' + (vConfig.subtitleFontSize || 14) + 'px;color:' + (vConfig.subtitleColor || '#96a4b6') + ';text-align:center;line-height:1.3;font-weight:400;margin-top:-2px;word-break:break-word;';
+          sub.textContent = b.subtitle;
+          item.appendChild(sub);
+        }
+
+        wrapper.appendChild(item);
+      }
+
+      // Update wrapper styles for variant layout
+      if (vConfig.spacing) wrapper.style.gap = vConfig.spacing + 'px';
+      if (vConfig.maxWidth) container.style.maxWidth = vConfig.maxWidth + 'px';
+    }
+
+    // Track conversions (add-to-cart) -- only on success
+    var conversionTracked = false;
+    function trackConversion() {
+      if (conversionTracked || !appUrl) return;
+      conversionTracked = true;
+      new Image().src = appUrl + '/api/ab-track?testId=' + enc(abTest.testId) +
+        '&variant=' + enc(variant) + '&event=conversion&sid=' + enc(sid);
+    }
+
+    // Listen for add-to-cart form submissions
+    document.addEventListener('submit', function(e) {
+      var form = e.target;
+      if (form && form.action && form.action.indexOf('/cart/add') !== -1) {
+        trackConversion();
+      }
+    });
+
+    // Listen for fetch-based add-to-cart (AJAX carts) -- only on success
+    var origFetch = window.fetch;
+    if (origFetch) {
+      window.fetch = function() {
+        var url = arguments[0];
+        if (typeof url === 'string' && url.indexOf('/cart/add') !== -1) {
+          return origFetch.apply(this, arguments).then(function(response) {
+            if (response.ok) trackConversion();
+            return response;
+          });
+        }
+        return origFetch.apply(this, arguments);
+      };
+    }
+  } catch(e) {
+    /* Silent fail -- never break the storefront */
+  }
+})();
+</script>
+{% endif %}
+
+{% schema %}
+{
+  "name": "Trust Badges",
+  "target": "section",
+  "stylesheet": "trust-badges.css",
+  "settings": [
+    {
+      "type": "paragraph",
+      "content": "Configure your badges in the Trust Badges app. These settings are used as fallback if the app is not connected."
+    },
+    {
+      "type": "header",
+      "content": "Badge 1"
+    },
+    {
+      "type": "select",
+      "id": "icon_1",
+      "label": "Icon",
+      "default": "lock",
+      "options": [
+        { "value": "lock", "label": "Secure Checkout" },
+        { "value": "truck", "label": "Free Shipping" },
+        { "value": "refresh", "label": "Money-Back" },
+        { "value": "shield", "label": "SSL Secured" },
+        { "value": "star", "label": "Premium Quality" },
+        { "value": "check", "label": "100% Satisfaction" },
+        { "value": "card", "label": "Secure Payment" },
+        { "value": "globe", "label": "Worldwide Delivery" },
+        { "value": "bell", "label": "24/7 Support" },
+        { "value": "heart", "label": "Handmade" },
+        { "value": "return", "label": "Easy Returns" }
+      ]
+    },
+    {
+      "type": "text",
+      "id": "label_1",
+      "label": "Label",
+      "default": "Secure Checkout"
+    },
+    {
+      "type": "header",
+      "content": "Badge 2"
+    },
+    {
+      "type": "select",
+      "id": "icon_2",
+      "label": "Icon",
+      "default": "truck",
+      "options": [
+        { "value": "lock", "label": "Secure Checkout" },
+        { "value": "truck", "label": "Free Shipping" },
+        { "value": "refresh", "label": "Money-Back" },
+        { "value": "shield", "label": "SSL Secured" },
+        { "value": "star", "label": "Premium Quality" },
+        { "value": "check", "label": "100% Satisfaction" },
+        { "value": "card", "label": "Secure Payment" },
+        { "value": "globe", "label": "Worldwide Delivery" },
+        { "value": "bell", "label": "24/7 Support" },
+        { "value": "heart", "label": "Handmade" },
+        { "value": "return", "label": "Easy Returns" }
+      ]
+    },
+    {
+      "type": "text",
+      "id": "label_2",
+      "label": "Label",
+      "default": "Free Shipping"
+    },
+    {
+      "type": "header",
+      "content": "Badge 3"
+    },
+    {
+      "type": "select",
+      "id": "icon_3",
+      "label": "Icon",
+      "default": "refresh",
+      "options": [
+        { "value": "lock", "label": "Secure Checkout" },
+        { "value": "truck", "label": "Free Shipping" },
+        { "value": "refresh", "label": "Money-Back" },
+        { "value": "shield", "label": "SSL Secured" },
+        { "value": "star", "label": "Premium Quality" },
+        { "value": "check", "label": "100% Satisfaction" },
+        { "value": "card", "label": "Secure Payment" },
+        { "value": "globe", "label": "Worldwide Delivery" },
+        { "value": "bell", "label": "24/7 Support" },
+        { "value": "heart", "label": "Handmade" },
+        { "value": "return", "label": "Easy Returns" }
+      ]
+    },
+    {
+      "type": "text",
+      "id": "label_3",
+      "label": "Label",
+      "default": "Money-Back Guarantee"
+    },
+    {
+      "type": "header",
+      "content": "Badge 4"
+    },
+    {
+      "type": "select",
+      "id": "icon_4",
+      "label": "Icon",
+      "default": "bell",
+      "options": [
+        { "value": "lock", "label": "Secure Checkout" },
+        { "value": "truck", "label": "Free Shipping" },
+        { "value": "refresh", "label": "Money-Back" },
+        { "value": "shield", "label": "SSL Secured" },
+        { "value": "star", "label": "Premium Quality" },
+        { "value": "check", "label": "100% Satisfaction" },
+        { "value": "card", "label": "Secure Payment" },
+        { "value": "globe", "label": "Worldwide Delivery" },
+        { "value": "bell", "label": "24/7 Support" },
+        { "value": "heart", "label": "Handmade" },
+        { "value": "return", "label": "Easy Returns" }
+      ]
+    },
+    {
+      "type": "text",
+      "id": "label_4",
+      "label": "Label",
+      "default": "24/7 Support"
+    },
+    {
+      "type": "header",
+      "content": "Layout (fallback)"
+    },
+    {
+      "type": "select",
+      "id": "layout",
+      "label": "Direction",
+      "default": "row",
+      "options": [
+        { "value": "row", "label": "Horizontal" },
+        { "value": "column", "label": "Vertical" }
+      ]
+    },
+    {
+      "type": "select",
+      "id": "alignment",
+      "label": "Alignment",
+      "default": "center",
+      "options": [
+        { "value": "flex-start", "label": "Left" },
+        { "value": "center", "label": "Center" },
+        { "value": "flex-end", "label": "Right" }
+      ]
+    },
+    {
+      "type": "range",
+      "id": "icon_size",
+      "label": "Icon Size",
+      "min": 20,
+      "max": 80,
+      "step": 2,
+      "default": 40,
+      "unit": "px"
+    },
+    {
+      "type": "range",
+      "id": "font_size",
+      "label": "Text Size",
+      "min": 10,
+      "max": 20,
+      "step": 1,
+      "default": 13,
+      "unit": "px"
+    },
+    {
+      "type": "range",
+      "id": "spacing",
+      "label": "Spacing",
+      "min": 4,
+      "max": 60,
+      "step": 2,
+      "default": 20,
+      "unit": "px"
+    },
+    {
+      "type": "range",
+      "id": "max_width",
+      "label": "Max Width",
+      "min": 200,
+      "max": 1200,
+      "step": 10,
+      "default": 600,
+      "unit": "px"
+    },
+    {
+      "type": "range",
+      "id": "padding",
+      "label": "Padding",
+      "min": 0,
+      "max": 40,
+      "step": 4,
+      "default": 16,
+      "unit": "px"
+    },
+    {
+      "type": "range",
+      "id": "vertical_margin",
+      "label": "Vertical Margin",
+      "min": 0,
+      "max": 40,
+      "step": 4,
+      "default": 16,
+      "unit": "px"
+    },
+    {
+      "type": "color",
+      "id": "icon_color",
+      "label": "Icon Color",
+      "default": "#333333"
+    },
+    {
+      "type": "color",
+      "id": "text_color",
+      "label": "Text Color",
+      "default": "#333333"
+    },
+    {
+      "type": "checkbox",
+      "id": "hide_branding",
+      "label": "Hide branding",
+      "default": false
+    }
+  ],
+  "enabled_on": {
+    "templates": ["product", "collection", "index", "cart"]
+  }
+}
+{% endschema %}

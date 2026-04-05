@@ -1,0 +1,13 @@
+[commands]
+dev = "npx remix vite:dev"
+build = "npx remix vite:build"
+
+[auth]
+login = "/auth/login"
+callback_path = "/auth/callback"
+
+[[roles]]
+type = "frontend"
+
+[[roles]]
+type = "backend"
