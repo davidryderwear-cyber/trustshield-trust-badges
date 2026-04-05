@@ -145,6 +145,9 @@ export const action = async ({ request }) => {
       badgeType: ["single_banner", "icon_block", "minimal_icons", "compact_grid"].includes(data.badgeType) ? data.badgeType : "icon_block",
       startsAt: data.startsAt || null,
       endsAt: data.endsAt || null,
+      // New fields
+      titleAboveIcons: String(data.titleAboveIcons || "").slice(0, 200),
+      titleGap: clamp(data.titleGap, 0, 40, 12),
     };
 
     await prisma.badgeConfig.upsert({
@@ -220,6 +223,7 @@ export default function BadgeConfig() {
   const [endsAt, setEndsAt] = useState(config.endsAt || null);
   const [startsOption, setStartsOption] = useState(config.startsAt ? "specific" : "now");
   const [endsOption, setEndsOption] = useState(config.endsAt ? "specific" : "never");
+  const [titleAboveIcons, setTitleAboveIcons] = useState(config.titleAboveIcons || "");
 
   // --- Design state ---
   const [layout, setLayout] = useState(config.layout);
@@ -246,6 +250,7 @@ export default function BadgeConfig() {
   const [subtitleFontSize, setSubtitleFontSize] = useState(config.subtitleFontSize ?? 14);
   const [subtitleColor, setSubtitleColor] = useState(config.subtitleColor || "#96a4b6");
   const [customCSS, setCustomCSS] = useState(config.customCSS);
+  const [titleGap, setTitleGap] = useState(config.titleGap ?? 12);
 
   // --- Placement state ---
   const [showOnProduct, setShowOnProduct] = useState(config.showOnProduct);
@@ -272,6 +277,7 @@ export default function BadgeConfig() {
   const handleSave = useCallback((status) => {
     const resolvedStatus = status || badgeStatus;
     setBadgeStatus(resolvedStatus);
+    const clamp = (val, min, max, def) => Math.min(max, Math.max(min, Number(val) || def));
     const data = {
       badges, layout, position, alignment, showOnProduct, showOnCart, showOnHome,
       iconSize, iconColor, textColor, fontSize, spacing, maxWidth, customCSS,
@@ -285,6 +291,8 @@ export default function BadgeConfig() {
       badgeType,
       startsAt: startsOption === "now" ? null : startsAt,
       endsAt: endsOption === "never" ? null : endsAt,
+      titleAboveIcons,
+      titleGap: clamp(titleGap, 0, 40, 12),
     };
     const formData = new FormData();
     formData.set("intent", "save");
@@ -298,6 +306,7 @@ export default function BadgeConfig() {
     iconBgColor, iconCornerRadius, useOriginalIconColor,
     subtitleFontSize, subtitleColor, targetType, submit,
     badgeStatus, badgeName, badgeType, startsAt, endsAt, startsOption, endsOption,
+    titleAboveIcons, titleGap,
   ]);
 
   const addBadge = useCallback((iconKey) => {
@@ -474,21 +483,32 @@ export default function BadgeConfig() {
   );
 
   // =========================================================================
-  // TAB 1 — Content
+  // TAB 1 — Content (ONE Card)
   // =========================================================================
-  // --- Badge type definitions ---
-  const badgeTypeOptions = [
-    { value: "single_banner", title: "Single banner", description: "One badge displayed as a full-width banner" },
-    { value: "icon_block",    title: "Icon block",    description: "Row of icons with labels below (default)" },
-    { value: "minimal_icons", title: "Minimal icons", description: "Icons only, no text labels" },
-    { value: "compact_grid",  title: "Compact grid",  description: "Tight grid of badges, great for many icons" },
-  ];
-
   const contentTab = (
     <BlockStack gap="400">
-      {/* Badge Name */}
       <Card>
-        <BlockStack gap="300">
+        <BlockStack gap="400">
+          {/* Badge type — plain radio buttons */}
+          <BlockStack gap="200">
+            <Text as="h2" variant="headingMd">Badge type</Text>
+            {[
+              { value: "single_banner", label: "Single banner" },
+              { value: "icon_block", label: "Icon block" },
+              { value: "minimal_icons", label: "Minimal icons" },
+              { value: "compact_grid", label: "Payment icons" },
+            ].map((opt) => (
+              <label key={opt.value} style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontSize: 14 }}>
+                <input type="radio" name="badgeType" value={opt.value} checked={badgeType === opt.value}
+                  onChange={() => setBadgeType(opt.value)} />
+                {opt.label}
+              </label>
+            ))}
+          </BlockStack>
+
+          <Divider />
+
+          {/* Badge name */}
           <TextField
             label="Badge name"
             value={badgeName}
@@ -496,638 +516,591 @@ export default function BadgeConfig() {
             autoComplete="off"
             helpText="Only visible to you. For your own internal reference."
           />
-        </BlockStack>
-      </Card>
-
-      {/* Your Badges — content first */}
-      <Card>
-        <BlockStack gap="400">
-          <InlineStack align="space-between" blockAlign="center">
-            <Text as="h2" variant="headingMd">
-              Your Badges ({badges.length}/{limits.maxBadges})
-            </Text>
-            <InlineStack gap="200">
-              <Select
-                label="Load template"
-                labelHidden
-                options={[
-                  { label: "Load template...", value: "" },
-                  ...Object.entries(BADGE_TEMPLATES).map(([key, t]) => ({
-                    label: t.name,
-                    value: key,
-                  })),
-                ]}
-                value=""
-                onChange={(val) => val && applyTemplate(val)}
-              />
-              <Button
-                variant="primary"
-                onClick={() => setAddModalOpen(true)}
-                disabled={badges.length >= limits.maxBadges}
-              >
-                Add Badge
-              </Button>
-            </InlineStack>
-          </InlineStack>
 
           <Divider />
 
-          {badges.length === 0 ? (
-            <Box padding="800" borderRadius="200" background="bg-surface-secondary">
-              <BlockStack gap="300" inlineAlign="center">
-                <Text as="p" variant="bodyLg" tone="subdued" alignment="center">
-                  No badges added yet
-                </Text>
-                <Text as="p" variant="bodySm" tone="subdued" alignment="center">
-                  Add badges manually or load a template to get started
-                </Text>
-                <Button onClick={() => setAddModalOpen(true)}>Add your first badge</Button>
-              </BlockStack>
-            </Box>
-          ) : (
+          {/* --- Type-specific content --- */}
+
+          {/* SINGLE BANNER */}
+          {badgeType === "single_banner" && (
             <BlockStack gap="300">
-              {badges.map((badge, index) => (
-                <Box
-                  key={badge.id}
-                  padding="300"
-                  borderRadius="200"
-                  background="bg-surface-secondary"
-                >
-                  <BlockStack gap="200">
-                    <InlineStack align="space-between" blockAlign="center" gap="300">
-                      <InlineStack gap="300" blockAlign="center" wrap={false}>
-                        {badge.type === "custom" ? (
-                          <img
-                            src={badge.imageUrl}
-                            alt={badge.label}
-                            style={{ width: 40, height: 40, objectFit: "contain" }}
-                          />
-                        ) : (
-                          <div
-                            style={{ minWidth: 40, width: 40, height: 40, color: iconColor }}
-                            dangerouslySetInnerHTML={{ __html: BADGE_ICONS[badge.iconKey]?.svg || "" }}
-                          />
-                        )}
-                        <BlockStack gap="0">
-                          <TextField
-                            value={badge.label}
-                            onChange={(val) => updateBadge(badge.id, "label", val)}
-                            autoComplete="off"
-                            labelHidden
-                            label="Title"
-                            placeholder="Badge title"
-                          />
-                          <TextField
-                            value={badge.subtitle || ""}
-                            onChange={(val) => updateBadge(badge.id, "subtitle", val)}
-                            autoComplete="off"
-                            labelHidden
-                            label="Subtitle"
-                            placeholder="Optional subtitle"
-                          />
-                        </BlockStack>
-                      </InlineStack>
-                      <InlineStack gap="200">
-                        <Button size="slim" onClick={() => moveBadge(index, -1)} disabled={index === 0}>
-                          ↑
-                        </Button>
-                        <Button size="slim" onClick={() => moveBadge(index, 1)} disabled={index === badges.length - 1}>
-                          ↓
-                        </Button>
-                        <Button size="slim" tone="critical" onClick={() => removeBadge(badge.id)}>
-                          Remove
-                        </Button>
-                      </InlineStack>
-                    </InlineStack>
-                  </BlockStack>
-                </Box>
-              ))}
+              <TextField
+                label="Title"
+                value={badges[0]?.label || ""}
+                onChange={(val) => {
+                  if (badges.length === 0) return;
+                  updateBadge(badges[0].id, "label", val);
+                }}
+                autoComplete="off"
+              />
+              <TextField
+                label="Subheading"
+                value={badges[0]?.subtitle || ""}
+                onChange={(val) => {
+                  if (badges.length === 0) return;
+                  updateBadge(badges[0].id, "subtitle", val);
+                }}
+                autoComplete="off"
+              />
+              {/* Icon section */}
+              {badges.length > 0 && (
+                <BlockStack gap="200">
+                  <Text as="p" variant="bodyMd" fontWeight="semibold">Icon</Text>
+                  <InlineStack gap="300" blockAlign="center">
+                    {badges[0].type === "custom" ? (
+                      <img src={badges[0].imageUrl} alt={badges[0].label} style={{ width: 40, height: 40, objectFit: "contain" }} />
+                    ) : (
+                      <div style={{ minWidth: 40, width: 40, height: 40, color: iconColor }}
+                        dangerouslySetInnerHTML={{ __html: BADGE_ICONS[badges[0].iconKey]?.svg || "" }} />
+                    )}
+                    <Button size="slim" tone="critical" onClick={() => removeBadge(badges[0].id)}>Remove icon</Button>
+                    <Button size="slim" onClick={() => setAddModalOpen(true)}>Upload Icon</Button>
+                  </InlineStack>
+                </BlockStack>
+              )}
+              {badges.length === 0 && (
+                <Button onClick={() => setAddModalOpen(true)}>Add Badge</Button>
+              )}
+              <Select
+                label="Call to action"
+                options={[
+                  { label: "No call to action", value: "none" },
+                  { label: "Link URL", value: "link" },
+                ]}
+                value="none"
+                onChange={() => {}}
+              />
             </BlockStack>
           )}
-        </BlockStack>
-      </Card>
 
-      {/* Badge Type — display choice after you've seen your badges */}
-      <Card>
-        <BlockStack gap="300">
-          <BlockStack gap="100">
-            <Text as="h2" variant="headingMd">Display style</Text>
-            <Text as="p" variant="bodySm" tone="subdued">Choose how your badges are laid out on the page.</Text>
-          </BlockStack>
-          <InlineStack gap="300" wrap>
-            {badgeTypeOptions.map((opt) => (
-              <div
-                key={opt.value}
-                onClick={() => setBadgeType(opt.value)}
-                style={{ cursor: "pointer", flex: "1 1 0", minWidth: 120 }}
-              >
-                <Box
-                  padding="300"
-                  borderRadius="200"
-                  borderWidth="025"
-                  borderColor={badgeType === opt.value ? "border-brand" : "border"}
-                  background={badgeType === opt.value ? "bg-surface-selected" : "bg-surface-secondary"}
-                >
-                  <BlockStack gap="100">
-                    <Text as="p" variant="bodyMd" fontWeight="semibold">{opt.title}</Text>
-                    <Text as="p" variant="bodySm" tone="subdued">{opt.description}</Text>
-                  </BlockStack>
-                </Box>
-              </div>
-            ))}
-          </InlineStack>
-        </BlockStack>
-      </Card>
-
-      {/* Scheduling */}
-      <Card>
-        <BlockStack gap="300">
-          <Text as="h2" variant="headingMd">Scheduling</Text>
-          {!limits.scheduling ? (
-            <Banner tone="info">
-              Available with Essential plan. <a href="/app/billing">Upgrade now</a>.
-            </Banner>
-          ) : (
+          {/* ICON BLOCK */}
+          {badgeType === "icon_block" && (
             <BlockStack gap="400">
-              {/* Starts */}
-              <BlockStack gap="200">
-                <Text as="p" variant="bodyMd" fontWeight="semibold">Starts</Text>
-                <InlineStack gap="300">
-                  <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
-                    <input
-                      type="radio"
-                      name="startsOption"
-                      value="now"
-                      checked={startsOption === "now"}
-                      onChange={() => { setStartsOption("now"); setStartsAt(null); }}
-                    />
-                    Right now
-                  </label>
-                  <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
-                    <input
-                      type="radio"
-                      name="startsOption"
-                      value="specific"
-                      checked={startsOption === "specific"}
-                      onChange={() => setStartsOption("specific")}
-                    />
-                    Specific date
-                  </label>
-                </InlineStack>
-                {startsOption === "specific" && (
-                  <input
-                    type="datetime-local"
-                    value={startsAt || ""}
-                    onChange={(e) => setStartsAt(e.target.value)}
-                    style={{
-                      padding: "8px 12px",
-                      borderRadius: 8,
-                      border: "1px solid #c5c8d1",
-                      fontSize: 14,
-                      maxWidth: 280,
-                    }}
+              <TextField
+                label="Title above icons"
+                value={titleAboveIcons}
+                onChange={setTitleAboveIcons}
+                autoComplete="off"
+                placeholder="e.g. Why shop with us?"
+              />
+              {badges.map((badge, index) => (
+                <BlockStack key={badge.id} gap="200">
+                  <Text as="p" variant="bodyMd" fontWeight="bold">Icon #{index + 1}</Text>
+                  <TextField
+                    label="Title"
+                    value={badge.label}
+                    onChange={(val) => updateBadge(badge.id, "label", val)}
+                    autoComplete="off"
                   />
-                )}
-              </BlockStack>
-
-              {/* Ends */}
-              <BlockStack gap="200">
-                <Text as="p" variant="bodyMd" fontWeight="semibold">Ends</Text>
-                <InlineStack gap="300">
-                  <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
-                    <input
-                      type="radio"
-                      name="endsOption"
-                      value="never"
-                      checked={endsOption === "never"}
-                      onChange={() => { setEndsOption("never"); setEndsAt(null); }}
-                    />
-                    Never
-                  </label>
-                  <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
-                    <input
-                      type="radio"
-                      name="endsOption"
-                      value="specific"
-                      checked={endsOption === "specific"}
-                      onChange={() => setEndsOption("specific")}
-                    />
-                    Specific date
-                  </label>
-                </InlineStack>
-                {endsOption === "specific" && (
-                  <input
-                    type="datetime-local"
-                    value={endsAt || ""}
-                    onChange={(e) => setEndsAt(e.target.value)}
-                    style={{
-                      padding: "8px 12px",
-                      borderRadius: 8,
-                      border: "1px solid #c5c8d1",
-                      fontSize: 14,
-                      maxWidth: 280,
-                    }}
+                  <TextField
+                    label="Subheading"
+                    value={badge.subtitle || ""}
+                    onChange={(val) => updateBadge(badge.id, "subtitle", val)}
+                    autoComplete="off"
                   />
-                )}
-              </BlockStack>
+                  <InlineStack gap="300" blockAlign="center">
+                    <Text as="p" variant="bodySm">Icon:</Text>
+                    {badge.type === "custom" ? (
+                      <img src={badge.imageUrl} alt={badge.label} style={{ width: 32, height: 32, objectFit: "contain" }} />
+                    ) : (
+                      <div style={{ minWidth: 32, width: 32, height: 32, color: iconColor }}
+                        dangerouslySetInnerHTML={{ __html: BADGE_ICONS[badge.iconKey]?.svg || "" }} />
+                    )}
+                    <Button size="slim" tone="critical" onClick={() => removeBadge(badge.id)}>Remove icon</Button>
+                  </InlineStack>
+                  {index < badges.length - 1 && <Divider />}
+                </BlockStack>
+              ))}
+              <Button onClick={() => setAddModalOpen(true)} disabled={badges.length >= limits.maxBadges}>
+                Add icon
+              </Button>
             </BlockStack>
           )}
+
+          {/* MINIMAL ICONS or COMPACT GRID (Payment icons) */}
+          {(badgeType === "minimal_icons" || badgeType === "compact_grid") && (
+            <BlockStack gap="300">
+              <InlineStack align="space-between" blockAlign="center">
+                <Text as="h2" variant="headingMd">
+                  Your Badges ({badges.length}/{limits.maxBadges})
+                </Text>
+                <Select
+                  label="Load template"
+                  labelHidden
+                  options={[
+                    { label: "Load template...", value: "" },
+                    ...Object.entries(BADGE_TEMPLATES).map(([key, t]) => ({
+                      label: t.name,
+                      value: key,
+                    })),
+                  ]}
+                  value=""
+                  onChange={(val) => val && applyTemplate(val)}
+                />
+              </InlineStack>
+
+              {badges.length === 0 ? (
+                <Box padding="800" borderRadius="200" background="bg-surface-secondary">
+                  <BlockStack gap="300" inlineAlign="center">
+                    <Text as="p" variant="bodyLg" tone="subdued" alignment="center">
+                      No badges added yet
+                    </Text>
+                    <Text as="p" variant="bodySm" tone="subdued" alignment="center">
+                      Add badges manually or load a template to get started
+                    </Text>
+                    <Button onClick={() => setAddModalOpen(true)}>Add your first badge</Button>
+                  </BlockStack>
+                </Box>
+              ) : (
+                <BlockStack gap="300">
+                  {badges.map((badge, index) => (
+                    <Box key={badge.id} padding="300" borderRadius="200" background="bg-surface-secondary">
+                      <BlockStack gap="200">
+                        <InlineStack align="space-between" blockAlign="center" gap="300">
+                          <InlineStack gap="300" blockAlign="center" wrap={false}>
+                            {badge.type === "custom" ? (
+                              <img src={badge.imageUrl} alt={badge.label} style={{ width: 40, height: 40, objectFit: "contain" }} />
+                            ) : (
+                              <div style={{ minWidth: 40, width: 40, height: 40, color: iconColor }}
+                                dangerouslySetInnerHTML={{ __html: BADGE_ICONS[badge.iconKey]?.svg || "" }} />
+                            )}
+                            <BlockStack gap="0">
+                              <TextField
+                                value={badge.label}
+                                onChange={(val) => updateBadge(badge.id, "label", val)}
+                                autoComplete="off"
+                                labelHidden
+                                label="Title"
+                                placeholder="Badge title"
+                              />
+                              <TextField
+                                value={badge.subtitle || ""}
+                                onChange={(val) => updateBadge(badge.id, "subtitle", val)}
+                                autoComplete="off"
+                                labelHidden
+                                label="Subtitle"
+                                placeholder="Optional subtitle"
+                              />
+                            </BlockStack>
+                          </InlineStack>
+                          <InlineStack gap="200">
+                            <Button size="slim" onClick={() => moveBadge(index, -1)} disabled={index === 0}>
+                              ↑
+                            </Button>
+                            <Button size="slim" onClick={() => moveBadge(index, 1)} disabled={index === badges.length - 1}>
+                              ↓
+                            </Button>
+                            <Button size="slim" tone="critical" onClick={() => removeBadge(badge.id)}>
+                              Remove
+                            </Button>
+                          </InlineStack>
+                        </InlineStack>
+                      </BlockStack>
+                    </Box>
+                  ))}
+                </BlockStack>
+              )}
+
+              <Button variant="primary" onClick={() => setAddModalOpen(true)} disabled={badges.length >= limits.maxBadges}>
+                Add Badge
+              </Button>
+            </BlockStack>
+          )}
+
+          <Divider />
+
+          {/* Scheduling */}
+          <BlockStack gap="300">
+            <Text as="h2" variant="headingMd">Scheduling</Text>
+            {!limits.scheduling ? (
+              <Banner tone="info">
+                Available with Essential plan. <a href="/app/billing">Upgrade now</a>.
+              </Banner>
+            ) : (
+              <BlockStack gap="400">
+                {/* Starts */}
+                <BlockStack gap="200">
+                  <Text as="p" variant="bodyMd" fontWeight="semibold">Starts</Text>
+                  <InlineStack gap="300">
+                    <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
+                      <input type="radio" name="startsOption" value="now" checked={startsOption === "now"}
+                        onChange={() => { setStartsOption("now"); setStartsAt(null); }} />
+                      Right now
+                    </label>
+                    <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
+                      <input type="radio" name="startsOption" value="specific" checked={startsOption === "specific"}
+                        onChange={() => setStartsOption("specific")} />
+                      Specific date
+                    </label>
+                  </InlineStack>
+                  {startsOption === "specific" && (
+                    <input type="datetime-local" value={startsAt || ""} onChange={(e) => setStartsAt(e.target.value)}
+                      style={{ padding: "8px 12px", borderRadius: 8, border: "1px solid #c5c8d1", fontSize: 14, maxWidth: 280 }} />
+                  )}
+                </BlockStack>
+
+                {/* Ends */}
+                <BlockStack gap="200">
+                  <Text as="p" variant="bodyMd" fontWeight="semibold">Ends</Text>
+                  <InlineStack gap="300">
+                    <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
+                      <input type="radio" name="endsOption" value="never" checked={endsOption === "never"}
+                        onChange={() => { setEndsOption("never"); setEndsAt(null); }} />
+                      Never
+                    </label>
+                    <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
+                      <input type="radio" name="endsOption" value="specific" checked={endsOption === "specific"}
+                        onChange={() => setEndsOption("specific")} />
+                      Specific date
+                    </label>
+                  </InlineStack>
+                  {endsOption === "specific" && (
+                    <input type="datetime-local" value={endsAt || ""} onChange={(e) => setEndsAt(e.target.value)}
+                      style={{ padding: "8px 12px", borderRadius: 8, border: "1px solid #c5c8d1", fontSize: 14, maxWidth: 280 }} />
+                  )}
+                </BlockStack>
+              </BlockStack>
+            )}
+          </BlockStack>
         </BlockStack>
       </Card>
     </BlockStack>
   );
 
   // =========================================================================
-  // TAB 2 — Design  (order: Style → Card → Icon → Typography → Layout → Spacing → CSS)
+  // TAB 2 — Design (ONE Card with Dividers between sections)
   // =========================================================================
   const designTab = (
     <BlockStack gap="400">
-
-      {/* ── Style Presets ── */}
       <Card>
         <BlockStack gap="400">
-          <Text as="h2" variant="headingMd">Style</Text>
-          <Select
-            label="Apply a template"
-            options={[
-              { label: "Choose a template...", value: "" },
-              ...DESIGN_TEMPLATES.map((t) => ({ label: t.label, value: t.value })),
-            ]}
-            value=""
-            onChange={(val) => val && applyDesignTemplate(val)}
-            helpText="Applies a coordinated colour, size and radius preset."
-          />
+
+          {/* 1. Template — dropdown only */}
+          <BlockStack gap="300">
+            <Text as="h2" variant="headingMd">Template</Text>
+            <Select
+              label="Apply a template"
+              labelHidden
+              options={[
+                { label: "Choose a template...", value: "" },
+                ...DESIGN_TEMPLATES.map((t) => ({ label: t.label, value: t.value })),
+              ]}
+              value=""
+              onChange={(val) => val && applyDesignTemplate(val)}
+            />
+          </BlockStack>
+
           <Divider />
-          <BlockStack gap="300">
-            <Text as="p" variant="bodyMd" fontWeight="semibold">Colour theme</Text>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
-              {COLOR_THEMES.map((theme) => {
-                const isActive = bgColor === theme.bg && iconBgColor === theme.iconBg && iconColor === theme.icon && textColor === theme.text;
-                return (
-                  <div key={theme.name} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-                    <button
-                      title={theme.name}
-                      onClick={() => applyColorTheme(theme)}
-                      style={{
-                        width: 40, height: 40, borderRadius: "50%", padding: 0, cursor: "pointer", flexShrink: 0,
-                        border: `3px solid ${isActive ? "#303030" : "transparent"}`,
-                        boxShadow: isActive ? "0 0 0 1px #303030" : "0 1px 4px rgba(0,0,0,0.15)",
-                        overflow: "hidden", position: "relative",
-                      }}
-                    >
-                      <div style={{ position: "absolute", inset: 0, background: theme.bg }} />
-                      <div style={{
-                        position: "absolute", bottom: 0, right: 0, width: "55%", height: "55%",
-                        background: theme.iconBg, borderTopLeftRadius: "40%",
-                      }} />
-                    </button>
-                    <span style={{ fontSize: 10, color: isActive ? "#303030" : "#8c9196", fontWeight: isActive ? 600 : 400 }}>
-                      {theme.name.split(" ")[0]}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          </BlockStack>
-        </BlockStack>
-      </Card>
 
-      {/* ── Card — container styling ── */}
-      <Card>
-        <BlockStack gap="300">
-          <Text as="h2" variant="headingMd">Card</Text>
-          <BlockStack gap="200">
-            <Text as="p" variant="bodySm" tone="subdued">Background</Text>
-            <InlineStack gap="300">
-              <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", fontSize: 14 }}>
-                <input type="radio" name="bgType" value="solid" checked={!bgGradient} onChange={() => setBgGradient(false)} />
-                Single colour
-              </label>
-              <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", fontSize: 14 }}>
-                <input type="radio" name="bgType" value="gradient" checked={bgGradient} onChange={() => setBgGradient(true)} />
-                Gradient
-              </label>
-            </InlineStack>
-            {!bgGradient ? (
-              <ColorField label="Background colour" value={bgColor} onChange={setBgColor} />
-            ) : (
-              <InlineGrid columns={2} gap="300">
-                <ColorField label="Gradient start" value={bgColor} onChange={setBgColor} />
-                <ColorField label="Gradient end" value={bgColorEnd} onChange={setBgColorEnd} />
-              </InlineGrid>
-            )}
-          </BlockStack>
-          <InlineGrid columns={2} gap="300">
+          {/* 2. Card */}
+          <BlockStack gap="300">
+            <Text as="h2" variant="headingMd">Card</Text>
+            <BlockStack gap="200">
+              <InlineStack gap="300">
+                <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", fontSize: 14 }}>
+                  <input type="radio" name="bgType" value="solid" checked={!bgGradient} onChange={() => setBgGradient(false)} />
+                  Single color background
+                </label>
+                <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", fontSize: 14 }}>
+                  <input type="radio" name="bgType" value="gradient" checked={bgGradient} onChange={() => setBgGradient(true)} />
+                  Gradient background
+                </label>
+              </InlineStack>
+              {!bgGradient ? (
+                <ColorField label="Background color" value={bgColor} onChange={setBgColor} />
+              ) : (
+                <InlineGrid columns={2} gap="300">
+                  <ColorField label="Gradient start" value={bgColor} onChange={setBgColor} />
+                  <ColorField label="Gradient end" value={bgColorEnd} onChange={setBgColorEnd} />
+                </InlineGrid>
+              )}
+            </BlockStack>
             <PxInput label="Corner radius" value={cornerRadius} onChange={setCornerRadius} min={0} max={24} />
-            <div />
-          </InlineGrid>
-          <InlineGrid columns={2} gap="300">
-            <PxInput label="Border width" value={borderSize} onChange={setBorderSize} min={0} max={8} />
-            <ColorField label="Border colour" value={borderColor} onChange={setBorderColor} />
-          </InlineGrid>
-        </BlockStack>
-      </Card>
-
-      {/* ── Icon ── */}
-      <Card>
-        <BlockStack gap="300">
-          <Text as="h2" variant="headingMd">Icon</Text>
-          <RangeSlider label={`Icon size: ${iconSize}px`} min={16} max={80} value={iconSize} onChange={setIconSize} output />
-          <Checkbox label="Use original icon color" checked={useOriginalIconColor} onChange={setUseOriginalIconColor} />
-          {!useOriginalIconColor && (
-            <ColorField label="Icon color" value={iconColor} onChange={setIconColor}
-              disabled={!limits.customColors} helpText={!limits.customColors ? "Upgrade to customize" : ""} />
-          )}
-          <BlockStack gap="200">
-            <Text as="p" variant="bodyMd" fontWeight="semibold">Icon background</Text>
-            <InlineStack gap="200" blockAlign="center" wrap>
-              {["#ffffff","#f4f6f8","#e3e5e7","#dbeafe","#d1fae5","#fef3c7","#ede9fe","#ffe4e6","#374151","#1e40af","#065f46","#92400e"].map((color) => (
-                <button key={color} title={color} onClick={() => setIconBgColor(color)} style={{
-                  width: 28, height: 28, borderRadius: 6, background: color, padding: 0, flexShrink: 0,
-                  border: `2px solid ${iconBgColor === color ? "#303030" : "#c5c8d1"}`, cursor: "pointer",
-                }} />
-              ))}
-              <input type="color" value={iconBgColor} onChange={(e) => setIconBgColor(e.target.value)}
-                style={{ width: 28, height: 28, borderRadius: 6, border: "2px solid #c5c8d1", cursor: "pointer", padding: 0, background: "none" }} />
-            </InlineStack>
-          </BlockStack>
-          <BlockStack gap="200">
-            <Text as="p" variant="bodyMd" fontWeight="semibold">Background shape</Text>
-            <InlineStack gap="200" wrap>
-              {ICON_SHAPES.map((shape) => {
-                const r = shape.radius === 999 ? "50%" : `${shape.radius}px`;
-                const active = iconCornerRadius === shape.radius;
-                return (
-                  <button key={shape.label} onClick={() => setIconCornerRadius(shape.radius)} style={{
-                    display: "flex", flexDirection: "column", alignItems: "center", gap: 5,
-                    padding: "8px 12px", borderRadius: 8, cursor: "pointer", minWidth: 60,
-                    border: `2px solid ${active ? "#303030" : "#e1e3e5"}`,
-                    background: active ? "#f0f0f0" : "#fff",
-                  }}>
-                    <div style={{ width: 30, height: 30, borderRadius: r, background: iconBgColor, border: `1.5px solid ${borderColor}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      <div style={{ width: 14, height: 14, borderRadius: 2, background: iconColor, opacity: 0.8 }} />
-                    </div>
-                    <span style={{ fontSize: 11, fontWeight: active ? 600 : 400, color: active ? "#303030" : "#6d7175" }}>{shape.label}</span>
-                  </button>
-                );
-              })}
-            </InlineStack>
-          </BlockStack>
-        </BlockStack>
-      </Card>
-
-      {/* ── Typography ── */}
-      <Card>
-        <BlockStack gap="300">
-          <Text as="h2" variant="headingMd">Typography</Text>
-          <InlineGrid columns={2} gap="300">
-            <RangeSlider label={`Title size: ${fontSize}px`} min={10} max={28} value={fontSize} onChange={setFontSize} output />
-            <ColorField label="Title color" value={textColor} onChange={setTextColor}
-              disabled={!limits.customColors} helpText={!limits.customColors ? "Upgrade to customize" : ""} />
-          </InlineGrid>
-          <InlineGrid columns={2} gap="300">
-            <RangeSlider label={`Subtitle size: ${subtitleFontSize}px`} min={8} max={22} value={subtitleFontSize} onChange={setSubtitleFontSize} output />
-            <ColorField label="Subtitle color" value={subtitleColor} onChange={setSubtitleColor} disabled={!limits.customColors} />
-          </InlineGrid>
-        </BlockStack>
-      </Card>
-
-      {/* ── Layout ── */}
-      <Card>
-        <BlockStack gap="300">
-          <Text as="h2" variant="headingMd">Layout</Text>
-          <Select label="Badge arrangement"
-            options={[{ label: "Horizontal (row)", value: "horizontal" }, { label: "Vertical (column)", value: "vertical" }, { label: "Grid", value: "grid" }]}
-            value={layout} onChange={setLayout} />
-          <Select label="Alignment"
-            options={[{ label: "Left", value: "left" }, { label: "Center", value: "center" }, { label: "Right", value: "right" }]}
-            value={alignment} onChange={setAlignment} />
-          <RangeSlider label={`Max width: ${maxWidth}px`} min={200} max={1200} value={maxWidth} onChange={setMaxWidth} output />
-        </BlockStack>
-      </Card>
-
-      {/* ── Spacing ── */}
-      <Card>
-        <BlockStack gap="400">
-          <Text as="h2" variant="headingMd">Spacing</Text>
-          <PxInput label="Gap between badges" value={spacing} onChange={setSpacing} min={0} max={40} />
-          <BlockStack gap="200">
-            <Text as="p" variant="bodySm" tone="subdued">Inside padding</Text>
             <InlineGrid columns={2} gap="300">
-              <PxInput label="Top" value={paddingTop} onChange={setPaddingTop} min={0} max={60} />
-              <PxInput label="Bottom" value={paddingBottom} onChange={setPaddingBottom} min={0} max={60} />
+              <PxInput label="Border size" value={borderSize} onChange={setBorderSize} min={0} max={8} />
+              <ColorField label="Border color" value={borderColor} onChange={setBorderColor} />
             </InlineGrid>
-          </BlockStack>
-          <BlockStack gap="200">
-            <Text as="p" variant="bodySm" tone="subdued">Outside margin</Text>
-            <InlineGrid columns={2} gap="300">
-              <PxInput label="Top" value={marginTop} onChange={setMarginTop} min={0} max={60} />
-              <PxInput label="Bottom" value={marginBottom} onChange={setMarginBottom} min={0} max={60} />
-            </InlineGrid>
-          </BlockStack>
-        </BlockStack>
-      </Card>
 
-      {/* ── Custom CSS ── */}
-      {limits.customCSS && (
-        <Card>
+            {/* Spacing sub-header */}
+            <BlockStack gap="200">
+              <Text as="p" variant="bodyMd" fontWeight="semibold">Spacing</Text>
+              <InlineGrid columns={2} gap="300">
+                <PxInput label="Inside top" value={paddingTop} onChange={setPaddingTop} min={0} max={60} />
+                <PxInput label="Inside bottom" value={paddingBottom} onChange={setPaddingBottom} min={0} max={60} />
+              </InlineGrid>
+              <InlineGrid columns={2} gap="300">
+                <PxInput label="Outside top" value={marginTop} onChange={setMarginTop} min={0} max={60} />
+                <PxInput label="Outside bottom" value={marginBottom} onChange={setMarginBottom} min={0} max={60} />
+              </InlineGrid>
+            </BlockStack>
+
+            <PxInput label="Title gap" value={titleGap} onChange={setTitleGap} min={0} max={40} />
+          </BlockStack>
+
+          <Divider />
+
+          {/* 4. Icon */}
           <BlockStack gap="300">
-            <Text as="h2" variant="headingMd">Custom CSS</Text>
-            <TextField label="Custom CSS" labelHidden value={customCSS} onChange={setCustomCSS}
-              multiline={4} autoComplete="off" placeholder=".trust-badges-container { }" />
+            <Text as="h2" variant="headingMd">Icon</Text>
+            <PxInput label="Icon size" value={iconSize} onChange={setIconSize} min={16} max={80} />
+            <Checkbox label="Use original icon color" checked={useOriginalIconColor} onChange={setUseOriginalIconColor} />
+            {!useOriginalIconColor && (
+              <ColorField label="Icon color" value={iconColor} onChange={setIconColor}
+                disabled={!limits.customColors} helpText={!limits.customColors ? "Upgrade to customize" : ""} />
+            )}
+            <ColorField label="Icon background color" value={iconBgColor} onChange={setIconBgColor} />
+            <BlockStack gap="200">
+              <Text as="p" variant="bodyMd" fontWeight="semibold">Background shape</Text>
+              <InlineStack gap="200" wrap>
+                {ICON_SHAPES.map((shape) => {
+                  const r = shape.radius === 999 ? "50%" : `${shape.radius}px`;
+                  const active = iconCornerRadius === shape.radius;
+                  return (
+                    <button key={shape.label} onClick={() => setIconCornerRadius(shape.radius)} style={{
+                      display: "flex", flexDirection: "column", alignItems: "center", gap: 5,
+                      padding: "8px 12px", borderRadius: 8, cursor: "pointer", minWidth: 60,
+                      border: `2px solid ${active ? "#303030" : "#e1e3e5"}`,
+                      background: active ? "#f0f0f0" : "#fff",
+                    }}>
+                      <div style={{ width: 30, height: 30, borderRadius: r, background: iconBgColor, border: `1.5px solid ${borderColor}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <div style={{ width: 14, height: 14, borderRadius: 2, background: iconColor, opacity: 0.8 }} />
+                      </div>
+                      <span style={{ fontSize: 11, fontWeight: active ? 600 : 400, color: active ? "#303030" : "#6d7175" }}>{shape.label}</span>
+                    </button>
+                  );
+                })}
+              </InlineStack>
+            </BlockStack>
           </BlockStack>
-        </Card>
-      )}
+
+          <Divider />
+
+          {/* 6. Typography */}
+          <BlockStack gap="300">
+            <Text as="h2" variant="headingMd">Typography</Text>
+            <InlineGrid columns={2} gap="300">
+              <PxInput label="Title size" value={fontSize} onChange={setFontSize} min={10} max={28} />
+              <ColorField label="Title color" value={textColor} onChange={setTextColor}
+                disabled={!limits.customColors} helpText={!limits.customColors ? "Upgrade to customize" : ""} />
+            </InlineGrid>
+            <InlineGrid columns={2} gap="300">
+              <PxInput label="Subtitle size" value={subtitleFontSize} onChange={setSubtitleFontSize} min={8} max={22} />
+              <ColorField label="Subtitle color" value={subtitleColor} onChange={setSubtitleColor} disabled={!limits.customColors} />
+            </InlineGrid>
+          </BlockStack>
+
+          <Divider />
+
+          {/* 8. Layout */}
+          <BlockStack gap="300">
+            <Text as="h2" variant="headingMd">Layout</Text>
+            <Select label="Badge arrangement"
+              options={[{ label: "Horizontal (row)", value: "horizontal" }, { label: "Vertical (column)", value: "vertical" }, { label: "Grid", value: "grid" }]}
+              value={layout} onChange={setLayout} />
+            <Select label="Alignment"
+              options={[{ label: "Left", value: "left" }, { label: "Center", value: "center" }, { label: "Right", value: "right" }]}
+              value={alignment} onChange={setAlignment} />
+            <PxInput label="Max width" value={maxWidth} onChange={setMaxWidth} min={200} max={1200} />
+          </BlockStack>
+
+          {/* Custom CSS — gated, at bottom */}
+          {limits.customCSS && (
+            <>
+              <Divider />
+              <BlockStack gap="300">
+                <Text as="h2" variant="headingMd">Custom CSS</Text>
+                <TextField label="Custom CSS" labelHidden value={customCSS} onChange={setCustomCSS}
+                  multiline={4} autoComplete="off" placeholder=".trust-badges-container { }" />
+              </BlockStack>
+            </>
+          )}
+        </BlockStack>
+      </Card>
     </BlockStack>
   );
 
   // =========================================================================
-  // TAB 3 — Placement
+  // TAB 3 — Placement (2 Cards)
   // =========================================================================
   const placementTab = (
     <BlockStack gap="400">
-      <Card>
-        <BlockStack gap="300">
-          <Text as="h2" variant="headingMd">Show badges on</Text>
-          <Checkbox
-            label="Product pages"
-            checked={showOnProduct}
-            onChange={setShowOnProduct}
-          />
-          <Checkbox
-            label="Cart page / cart drawer"
-            checked={showOnCart}
-            onChange={setShowOnCart}
-            disabled={!limits.cartPage}
-            helpText={!limits.cartPage ? "Available on Essential plan and above" : ""}
-          />
-          <Checkbox
-            label="Home page"
-            checked={showOnHome}
-            onChange={setShowOnHome}
-          />
-        </BlockStack>
-      </Card>
-
-      <Card>
-        <BlockStack gap="300">
-          <Text as="h2" variant="headingMd">Position on product page</Text>
-          <Select
-            label="Badge position"
-            labelHidden
-            options={[
-              { label: "Below Add to Cart button", value: "below_add_to_cart" },
-              { label: "Below price", value: "below_price" },
-              { label: "Below description", value: "below_description" },
-              { label: "Custom (app block)", value: "custom" },
-            ]}
-            value={position}
-            onChange={setPosition}
-          />
-          {position === "custom" && (
-            <Banner tone="info">
-              Using app block positioning. Add the TrustShield block in your theme editor to place badges anywhere.
-            </Banner>
-          )}
-        </BlockStack>
-      </Card>
-
+      {/* Card 1: Select products */}
       <Card>
         <BlockStack gap="300">
           <Text as="h2" variant="headingMd">Select products</Text>
-          <Select
-            label="Show badges on"
-            labelHidden
-            options={[
-              { label: "All products", value: "all" },
-              { label: "Specific products", value: "specific_products" },
-              { label: "All products in specific collections", value: "specific_collections" },
-              { label: "All products with specific tags", value: "specific_tags", disabled: !limits.tagTargeting },
-            ]}
-            value={targetType}
-            onChange={setTargetType}
-          />
-          {targetType === "specific_tags" && !limits.tagTargeting && (
-            <Banner tone="warning">
-              Tag-based targeting is available on Essential plan and above. <a href="/app/billing">Upgrade</a>
-            </Banner>
-          )}
-          {(targetType === "specific_products" || targetType === "specific_collections") && (
-            <Banner tone="info">
-              Product and collection targeting will use Shopify's resource picker. Save your settings first, then use the theme editor to assign badges.
-            </Banner>
-          )}
+          {[
+            { value: "all", label: "All products", disabled: false, description: null },
+            { value: "specific_products", label: "Specific products", disabled: false, description: null },
+            { value: "specific_collections", label: "All products in specific collections", disabled: false, description: null },
+            { value: "specific_tags", label: "All products with specific tags", disabled: !limits.tagTargeting, description: !limits.tagTargeting ? "Available with Essential plan. Upgrade now." : null },
+            { value: "custom", label: "Custom position", disabled: false, description: "Add banner or icon block anywhere using app blocks." },
+          ].map((opt) => (
+            <BlockStack key={opt.value} gap="0">
+              <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: opt.disabled ? "not-allowed" : "pointer", fontSize: 14, opacity: opt.disabled ? 0.5 : 1 }}>
+                <input type="radio" name="targetType" value={opt.value} checked={targetType === opt.value}
+                  disabled={opt.disabled}
+                  onChange={() => {
+                    if (opt.value === "custom") {
+                      setTargetType(opt.value);
+                      setPosition("custom");
+                    } else {
+                      setTargetType(opt.value);
+                    }
+                  }} />
+                {opt.label}
+              </label>
+              {opt.description && (
+                <Text as="p" variant="bodySm" tone="subdued" breakWord>
+                  <span style={{ paddingLeft: 24, display: "block" }}>{opt.description}</span>
+                </Text>
+              )}
+            </BlockStack>
+          ))}
         </BlockStack>
       </Card>
 
-      {/* Geolocation — gated */}
+      {/* Card 2: Geolocation targeting */}
       <Card>
         <BlockStack gap="300">
-          <InlineStack align="space-between" blockAlign="center">
-            <Text as="h2" variant="headingMd">Geolocation targeting</Text>
-            <Badge tone="info">Essential</Badge>
-          </InlineStack>
-          {!limits.geolocation ? (
+          <Text as="h2" variant="headingMd">Geolocation targeting</Text>
+          {!limits.geolocation && (
             <Banner tone="info">
-              Show different badges based on visitor location. <a href="/app/billing">Upgrade to Essential</a> to unlock.
+              Available with Essential plan. <a href="/app/billing">Upgrade now</a>.
             </Banner>
-          ) : (
-            <Text as="p" tone="subdued">
-              Geolocation targeting coming soon.
-            </Text>
           )}
+          <BlockStack gap="100">
+            <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontSize: 14 }}>
+              <input type="radio" name="geoTarget" value="all" defaultChecked />
+              All world
+            </label>
+            <Text as="p" variant="bodySm" tone="subdued">
+              <span style={{ paddingLeft: 24, display: "block" }}>Excluding specific countries from other badges</span>
+            </Text>
+            <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: !limits.geolocation ? "not-allowed" : "pointer", fontSize: 14, opacity: !limits.geolocation ? 0.5 : 1 }}>
+              <input type="radio" name="geoTarget" value="specific" disabled={!limits.geolocation} />
+              Specific countries
+            </label>
+          </BlockStack>
         </BlockStack>
       </Card>
     </BlockStack>
   );
 
   // =========================================================================
-  // Live Preview (shared across all tabs)
+  // Live Preview (simplified — no product page simulation)
   // =========================================================================
   const livePreview = (
     <Card>
       <BlockStack gap="300">
-        <Text as="h2" variant="headingMd">Live Preview</Text>
-        <Divider />
-        <Box padding="200" borderRadius="200" background="bg-surface-secondary">
-          {/* Simulated product page context */}
-          <div style={{ padding: "12px 16px" }}>
-            {/* Product image placeholder — matches Essential */}
-            <div style={{
-              width: "100%",
-              aspectRatio: "4/3",
-              background: "#e4e8ed",
-              borderRadius: 10,
-              marginBottom: 14,
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 6,
-            }}>
-              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#b5bec9" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                <circle cx="8.5" cy="8.5" r="1.5"/>
-                <polyline points="21 15 16 10 5 21"/>
-              </svg>
-            </div>
-            <div style={{ fontSize: 13, color: "#888", marginBottom: 2 }}>Product Name</div>
-            <div style={{ fontSize: 22, fontWeight: 700, marginBottom: 12, color: "#1a1a1a" }}>$49.99</div>
-            <div style={{
-              background: "#000",
-              color: "#fff",
-              textAlign: "center",
-              padding: "10px 0",
-              borderRadius: 6,
-              fontSize: 14,
-              fontWeight: 600,
-              marginBottom: 8,
-            }}>
-              Add to cart
-            </div>
-            <div style={{
-              background: "#5C6AC4",
-              color: "#fff",
-              textAlign: "center",
-              padding: "10px 0",
-              borderRadius: 6,
-              fontSize: 14,
-              fontWeight: 600,
-              marginBottom: `${marginTop}px`,
-            }}>
-              Buy it now
-            </div>
-
-            {/* Badge Block */}
-            {badges.length > 0 ? (
-              <div
-                style={{
-                  background: bgGradient
-                    ? `linear-gradient(135deg, ${bgColor}, ${bgColorEnd})`
-                    : bgColor,
-                  borderRadius: `${cornerRadius}px`,
-                  border: borderSize > 0 ? `${borderSize}px solid ${borderColor}` : "none",
-                  padding: `${paddingTop}px 12px ${paddingBottom}px`,
-                  marginBottom: `${marginBottom}px`,
-                }}
-              >
-                {/* single_banner: first badge only, full width, icon + text side by side */}
-                {badgeType === "single_banner" && (() => {
-                  const badge = badges.filter((b) => b.enabled)[0];
-                  if (!badge) return null;
-                  const bannerIconSize = Math.max(iconSize, 48);
-                  return (
+        <div style={{
+          padding: "20px",
+          background: "#f6f6f7",
+          borderRadius: 8,
+          minHeight: 100,
+        }}>
+          {badges.length > 0 ? (
+            <div
+              style={{
+                background: bgGradient
+                  ? `linear-gradient(135deg, ${bgColor}, ${bgColorEnd})`
+                  : bgColor,
+                borderRadius: `${cornerRadius}px`,
+                border: borderSize > 0 ? `${borderSize}px solid ${borderColor}` : "none",
+                padding: `${paddingTop}px 12px ${paddingBottom}px`,
+              }}
+            >
+              {/* single_banner: first badge only, full width, icon + text side by side */}
+              {badgeType === "single_banner" && (() => {
+                const badge = badges.filter((b) => b.enabled)[0];
+                if (!badge) return null;
+                const bannerIconSize = Math.max(iconSize, 48);
+                return (
+                  <div style={{
+                    display: "flex",
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: 12,
+                    maxWidth: `${Math.min(maxWidth, 520)}px`,
+                    margin: "0 auto",
+                  }}>
                     <div style={{
+                      width: `${bannerIconSize}px`,
+                      height: `${bannerIconSize}px`,
+                      backgroundColor: iconBgColor !== "#ffffff" ? iconBgColor : "transparent",
+                      borderRadius: `${iconCornerRadius}px`,
                       display: "flex",
-                      flexDirection: "row",
                       alignItems: "center",
-                      gap: 12,
-                      maxWidth: `${Math.min(maxWidth, 520)}px`,
-                      margin: "0 auto",
+                      justifyContent: "center",
+                      flexShrink: 0,
                     }}>
+                      {badge.type === "custom" ? (
+                        <img src={badge.imageUrl} alt={badge.label} style={{ width: `${bannerIconSize - 4}px`, height: `${bannerIconSize - 4}px`, objectFit: "contain" }} />
+                      ) : (
+                        <div style={{ width: `${bannerIconSize - 4}px`, height: `${bannerIconSize - 4}px`, color: useOriginalIconColor ? undefined : iconColor }} dangerouslySetInnerHTML={{ __html: BADGE_ICONS[badge.iconKey]?.svg || "" }} />
+                      )}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <span style={{ fontSize: `${fontSize}px`, fontWeight: 600, color: textColor, lineHeight: 1.2, display: "block", wordBreak: "break-word" }}>{badge.label}</span>
+                      {badge.subtitle && (
+                        <span style={{ fontSize: `${subtitleFontSize}px`, fontWeight: 400, color: subtitleColor, lineHeight: 1.3, display: "block", wordBreak: "break-word" }}>{badge.subtitle}</span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* compact_grid: tight grid, smaller icons, 4+ per row */}
+              {badgeType === "compact_grid" && (
+                <div style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fill, minmax(48px, 1fr))",
+                  gap: `${Math.max(spacing, 6)}px`,
+                  maxWidth: `${Math.min(maxWidth, 520)}px`,
+                  margin: "0 auto",
+                  justifyItems: "center",
+                }}>
+                  {badges.filter((b) => b.enabled).map((badge) => {
+                    const payIconSize = Math.min(iconSize, 32);
+                    return (
+                      <div key={badge.id} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+                        <div style={{
+                          width: `${payIconSize}px`,
+                          height: `${payIconSize}px`,
+                          backgroundColor: iconBgColor !== "#ffffff" ? iconBgColor : "transparent",
+                          borderRadius: `${iconCornerRadius}px`,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}>
+                          {badge.type === "custom" ? (
+                            <img src={badge.imageUrl} alt={badge.label} style={{ width: `${payIconSize - 4}px`, height: `${payIconSize - 4}px`, objectFit: "contain" }} />
+                          ) : (
+                            <div style={{ width: `${payIconSize - 4}px`, height: `${payIconSize - 4}px`, color: useOriginalIconColor ? undefined : iconColor }} dangerouslySetInnerHTML={{ __html: BADGE_ICONS[badge.iconKey]?.svg || "" }} />
+                          )}
+                        </div>
+                        <span style={{ fontSize: `${Math.min(fontSize, 11)}px`, fontWeight: 500, color: textColor, textAlign: "center", lineHeight: 1.2, maxWidth: `${payIconSize + 12}px`, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block" }}>{badge.label}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* minimal_icons: icons only, no labels */}
+              {badgeType === "minimal_icons" && (
+                <div style={{
+                  display: "flex",
+                  flexDirection: layout === "vertical" ? "column" : "row",
+                  flexWrap: "wrap",
+                  justifyContent: alignment === "left" ? "flex-start" : alignment === "right" ? "flex-end" : "center",
+                  gap: `${spacing}px`,
+                  maxWidth: `${Math.min(maxWidth, 520)}px`,
+                  margin: "0 auto",
+                }}>
+                  {badges.filter((b) => b.enabled).map((badge) => (
+                    <div key={badge.id} style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
                       <div style={{
-                        width: `${bannerIconSize}px`,
-                        height: `${bannerIconSize}px`,
+                        width: `${iconSize}px`,
+                        height: `${iconSize}px`,
                         backgroundColor: iconBgColor !== "#ffffff" ? iconBgColor : "transparent",
                         borderRadius: `${iconCornerRadius}px`,
                         display: "flex",
@@ -1136,60 +1109,20 @@ export default function BadgeConfig() {
                         flexShrink: 0,
                       }}>
                         {badge.type === "custom" ? (
-                          <img src={badge.imageUrl} alt={badge.label} style={{ width: `${bannerIconSize - 4}px`, height: `${bannerIconSize - 4}px`, objectFit: "contain" }} />
+                          <img src={badge.imageUrl} alt={badge.label} style={{ width: `${iconSize - 4}px`, height: `${iconSize - 4}px`, objectFit: "contain" }} />
                         ) : (
-                          <div style={{ width: `${bannerIconSize - 4}px`, height: `${bannerIconSize - 4}px`, color: useOriginalIconColor ? undefined : iconColor }} dangerouslySetInnerHTML={{ __html: BADGE_ICONS[badge.iconKey]?.svg || "" }} />
-                        )}
-                      </div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <span style={{ fontSize: `${fontSize}px`, fontWeight: 600, color: textColor, lineHeight: 1.2, display: "block", wordBreak: "break-word" }}>{badge.label}</span>
-                        {badge.subtitle && (
-                          <span style={{ fontSize: `${subtitleFontSize}px`, fontWeight: 400, color: subtitleColor, lineHeight: 1.3, display: "block", wordBreak: "break-word" }}>{badge.subtitle}</span>
+                          <div style={{ width: `${iconSize - 4}px`, height: `${iconSize - 4}px`, color: useOriginalIconColor ? undefined : iconColor }} dangerouslySetInnerHTML={{ __html: BADGE_ICONS[badge.iconKey]?.svg || "" }} />
                         )}
                       </div>
                     </div>
-                  );
-                })()}
+                  ))}
+                </div>
+              )}
 
-                {/* compact_grid: tight grid, smaller icons, 4+ per row */}
-                {badgeType === "compact_grid" && (
-                  <div style={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(auto-fill, minmax(48px, 1fr))",
-                    gap: `${Math.max(spacing, 6)}px`,
-                    maxWidth: `${Math.min(maxWidth, 520)}px`,
-                    margin: "0 auto",
-                    justifyItems: "center",
-                  }}>
-                    {badges.filter((b) => b.enabled).map((badge) => {
-                      const payIconSize = Math.min(iconSize, 32);
-                      return (
-                        <div key={badge.id} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
-                          <div style={{
-                            width: `${payIconSize}px`,
-                            height: `${payIconSize}px`,
-                            backgroundColor: iconBgColor !== "#ffffff" ? iconBgColor : "transparent",
-                            borderRadius: `${iconCornerRadius}px`,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                          }}>
-                            {badge.type === "custom" ? (
-                              <img src={badge.imageUrl} alt={badge.label} style={{ width: `${payIconSize - 4}px`, height: `${payIconSize - 4}px`, objectFit: "contain" }} />
-                            ) : (
-                              <div style={{ width: `${payIconSize - 4}px`, height: `${payIconSize - 4}px`, color: useOriginalIconColor ? undefined : iconColor }} dangerouslySetInnerHTML={{ __html: BADGE_ICONS[badge.iconKey]?.svg || "" }} />
-                            )}
-                          </div>
-                          <span style={{ fontSize: `${Math.min(fontSize, 11)}px`, fontWeight: 500, color: textColor, textAlign: "center", lineHeight: 1.2, maxWidth: `${payIconSize + 12}px`, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block" }}>{badge.label}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-
-                {/* minimal_icons: icons only, no labels */}
-                {badgeType === "minimal_icons" && (
-                  <div style={{
+              {/* icon_block: current default behavior */}
+              {badgeType === "icon_block" && (
+                <div
+                  style={{
                     display: "flex",
                     flexDirection: layout === "vertical" ? "column" : "row",
                     flexWrap: "wrap",
@@ -1197,93 +1130,57 @@ export default function BadgeConfig() {
                     gap: `${spacing}px`,
                     maxWidth: `${Math.min(maxWidth, 520)}px`,
                     margin: "0 auto",
-                  }}>
-                    {badges.filter((b) => b.enabled).map((badge) => (
-                      <div key={badge.id} style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
-                        <div style={{
-                          width: `${iconSize}px`,
-                          height: `${iconSize}px`,
-                          backgroundColor: iconBgColor !== "#ffffff" ? iconBgColor : "transparent",
-                          borderRadius: `${iconCornerRadius}px`,
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          flexShrink: 0,
-                        }}>
-                          {badge.type === "custom" ? (
-                            <img src={badge.imageUrl} alt={badge.label} style={{ width: `${iconSize - 4}px`, height: `${iconSize - 4}px`, objectFit: "contain" }} />
-                          ) : (
-                            <div style={{ width: `${iconSize - 4}px`, height: `${iconSize - 4}px`, color: useOriginalIconColor ? undefined : iconColor }} dangerouslySetInnerHTML={{ __html: BADGE_ICONS[badge.iconKey]?.svg || "" }} />
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* icon_block: current default behavior */}
-                {badgeType === "icon_block" && (
-                  <div
-                    style={{
-                      display: "flex",
-                      flexDirection: layout === "vertical" ? "column" : "row",
-                      flexWrap: "wrap",
-                      justifyContent: alignment === "left" ? "flex-start" : alignment === "right" ? "flex-end" : "center",
-                      gap: `${spacing}px`,
-                      maxWidth: `${Math.min(maxWidth, 520)}px`,
-                      margin: "0 auto",
-                    }}
-                  >
-                    {badges.filter((b) => b.enabled).map((badge) => (
-                      <div
-                        key={badge.id}
-                        style={{
-                          display: "flex",
-                          flexDirection: "column",
-                          alignItems: "center",
-                          gap: 4,
-                          flex: "0 0 auto",
-                          minWidth: `${iconSize + 16}px`,
-                          maxWidth: "110px",
-                        }}
-                      >
-                        <div style={{
-                          width: `${iconSize}px`,
-                          height: `${iconSize}px`,
-                          backgroundColor: iconBgColor !== "#ffffff" ? iconBgColor : "transparent",
-                          borderRadius: `${iconCornerRadius}px`,
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          flexShrink: 0,
-                        }}>
-                          {badge.type === "custom" ? (
-                            <img src={badge.imageUrl} alt={badge.label} style={{ width: `${iconSize - 4}px`, height: `${iconSize - 4}px`, objectFit: "contain" }} />
-                          ) : (
-                            <div style={{ width: `${iconSize - 4}px`, height: `${iconSize - 4}px`, color: useOriginalIconColor ? undefined : iconColor }} dangerouslySetInnerHTML={{ __html: BADGE_ICONS[badge.iconKey]?.svg || "" }} />
-                          )}
-                        </div>
-                        <span style={{ fontSize: `${fontSize}px`, fontWeight: 600, color: textColor, textAlign: "center", lineHeight: 1.2, overflowWrap: "break-word", width: "100%" }}>{badge.label}</span>
-                        {badge.subtitle && (
-                          <span style={{ fontSize: `${subtitleFontSize}px`, fontWeight: 400, color: subtitleColor, textAlign: "center", lineHeight: 1.3, overflowWrap: "break-word", width: "100%" }}>{badge.subtitle}</span>
+                  }}
+                >
+                  {badges.filter((b) => b.enabled).map((badge) => (
+                    <div
+                      key={badge.id}
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        gap: 4,
+                        flex: "0 0 auto",
+                        minWidth: `${iconSize + 16}px`,
+                        maxWidth: "110px",
+                      }}
+                    >
+                      <div style={{
+                        width: `${iconSize}px`,
+                        height: `${iconSize}px`,
+                        backgroundColor: iconBgColor !== "#ffffff" ? iconBgColor : "transparent",
+                        borderRadius: `${iconCornerRadius}px`,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        flexShrink: 0,
+                      }}>
+                        {badge.type === "custom" ? (
+                          <img src={badge.imageUrl} alt={badge.label} style={{ width: `${iconSize - 4}px`, height: `${iconSize - 4}px`, objectFit: "contain" }} />
+                        ) : (
+                          <div style={{ width: `${iconSize - 4}px`, height: `${iconSize - 4}px`, color: useOriginalIconColor ? undefined : iconColor }} dangerouslySetInnerHTML={{ __html: BADGE_ICONS[badge.iconKey]?.svg || "" }} />
                         )}
                       </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div style={{
-                textAlign: "center",
-                padding: "24px 0",
-                color: "#999",
-                fontSize: 13,
-              }}>
-                Add badges to see a preview
-              </div>
-            )}
-          </div>
-        </Box>
+                      <span style={{ fontSize: `${fontSize}px`, fontWeight: 600, color: textColor, textAlign: "center", lineHeight: 1.2, overflowWrap: "break-word", width: "100%" }}>{badge.label}</span>
+                      {badge.subtitle && (
+                        <span style={{ fontSize: `${subtitleFontSize}px`, fontWeight: 400, color: subtitleColor, textAlign: "center", lineHeight: 1.3, overflowWrap: "break-word", width: "100%" }}>{badge.subtitle}</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div style={{
+              textAlign: "center",
+              padding: "24px 0",
+              color: "#999",
+              fontSize: 13,
+            }}>
+              Add badges to see a preview
+            </div>
+          )}
+        </div>
       </BlockStack>
     </Card>
   );
@@ -1338,7 +1235,7 @@ export default function BadgeConfig() {
           </Banner>
         )}
 
-        <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 58fr) minmax(0, 42fr)", gap: "20px", alignItems: "start" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 40fr) minmax(0, 60fr)", gap: "20px", alignItems: "start" }}>
           {/* Left column: Tabbed editor */}
           <div>
             <Card padding="0">
