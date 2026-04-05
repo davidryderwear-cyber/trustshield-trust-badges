@@ -32,5 +32,5 @@ api_version = "2025-01"
 embedded = false
 
 [build]
-automatically_update_urls_on_dev = true
+automatically_update_urls_on_dev = false
 dev_store_url = "trustshield-test-store.myshopify.com"
