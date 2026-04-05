@@ -13,24 +13,22 @@ redirect_urls = [ "https://trustshield-trust-badges-production.up.railway.app/au
 [webhooks]
 api_version = "2025-01"
 
-  # Webhook subscriptions will be configured when deploying to production
-  # [[webhooks.subscriptions]]
-  # topics = ["app/uninstalled"]
-  # uri = "/webhooks"
+  [[webhooks.subscriptions]]
+  topics = ["app/uninstalled"]
+  uri = "/webhooks"
 
-  # [[webhooks.subscriptions]]
-  # topics = ["app_subscriptions/update"]
-  # uri = "/webhooks"
+  [[webhooks.subscriptions]]
+  topics = ["app_subscriptions/update"]
+  uri = "/webhooks"
 
-  # Privacy compliance URLs will be set when deploying to production hosting
-  # [webhooks.privacy_compliance]
-  # customer_data_request_url = "https://your-app-domain.com/webhooks"
-  # customer_deletion_url = "https://your-app-domain.com/webhooks"
-  # shop_deletion_url = "https://your-app-domain.com/webhooks"
+  [webhooks.privacy_compliance]
+  customer_data_request_url = "https://trustshield-trust-badges-production.up.railway.app/webhooks"
+  customer_deletion_url = "https://trustshield-trust-badges-production.up.railway.app/webhooks"
+  shop_deletion_url = "https://trustshield-trust-badges-production.up.railway.app/webhooks"
 
 [pos]
 embedded = false
 
 [build]
-automatically_update_urls_on_dev = false
+automatically_update_urls_on_dev = true
 dev_store_url = "trustshield-test-store.myshopify.com"

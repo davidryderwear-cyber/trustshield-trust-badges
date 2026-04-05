@@ -374,13 +374,19 @@ export default function Index() {
                   <Button onClick={() => navigate("/app/badges")}>
                     Edit Badge
                   </Button>
-                  <Button
-                    url={`https://${shop}`}
-                    external
-                    variant="plain"
+                  <a
+                    href={`https://${shop}`}
+                    target="_top"
+                    rel="noopener noreferrer"
+                    style={{
+                      color: "#2c6ecb",
+                      textDecoration: "none",
+                      fontSize: "13px",
+                      padding: "6px 0",
+                    }}
                   >
                     Preview on store
-                  </Button>
+                  </a>
                 </InlineStack>
               </BlockStack>
             </Card>

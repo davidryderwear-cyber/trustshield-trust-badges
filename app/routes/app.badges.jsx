@@ -300,21 +300,21 @@ export default function BadgeConfig() {
   const addBadge = useCallback((iconKey) => {
     if (badges.length >= limits.maxBadges) return;
     const icon = BADGE_ICONS[iconKey];
-    setBadges([...badges, {
-      id: Date.now().toString(),
+    setBadges((prev) => [...prev, {
+      id: Date.now().toString() + Math.random().toString(36).slice(2, 5),
       iconKey,
       label: icon.name,
       subtitle: "",
       type: "preset",
       enabled: true,
     }]);
-    setAddModalOpen(false);
-  }, [badges, limits.maxBadges]);
+    // Keep modal open so user can add multiple badges
+  }, [limits.maxBadges]);
 
   const addCustomBadge = useCallback((customBadge) => {
     if (badges.length >= limits.maxBadges) return;
-    setBadges([...badges, {
-      id: Date.now().toString(),
+    setBadges((prev) => [...prev, {
+      id: Date.now().toString() + Math.random().toString(36).slice(2, 5),
       iconKey: `custom_${customBadge.id}`,
       label: customBadge.name,
       subtitle: "",
@@ -322,8 +322,8 @@ export default function BadgeConfig() {
       imageUrl: customBadge.imageUrl,
       enabled: true,
     }]);
-    setAddModalOpen(false);
-  }, [badges, limits.maxBadges]);
+    // Keep modal open so user can add multiple badges
+  }, [limits.maxBadges]);
 
   const handleUploadCustom = useCallback(() => {
     if (!uploadUrl || !uploadName) return;
@@ -1267,6 +1267,10 @@ export default function BadgeConfig() {
           onClose={() => { setAddModalOpen(false); setCategoryFilter("all"); }}
           title="Add a Trust Badge"
           large
+          primaryAction={{
+            content: "Done",
+            onAction: () => { setAddModalOpen(false); setCategoryFilter("all"); },
+          }}
         >
           <Modal.Section>
             <BlockStack gap="400">
