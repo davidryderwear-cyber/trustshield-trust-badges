@@ -122,15 +122,33 @@ function SetupStep({ number, title, description, completed, action, children }) 
           )}
           {!completed && action && (
             <Box paddingBlockStart="100">
-              <Button
-                size="slim"
-                variant={action.primary ? "primary" : undefined}
-                onClick={action.onAction}
-                url={action.url}
-                external={action.external}
-              >
-                {action.content}
-              </Button>
+              {action.external ? (
+                <a
+                  href={action.url}
+                  target="_top"
+                  rel="noopener noreferrer"
+                  style={{
+                    display: "inline-block",
+                    padding: "6px 12px",
+                    backgroundColor: action.primary ? "#303030" : "#f1f1f1",
+                    color: action.primary ? "#fff" : "#303030",
+                    borderRadius: "8px",
+                    textDecoration: "none",
+                    fontSize: "13px",
+                    fontWeight: 500,
+                  }}
+                >
+                  {action.content}
+                </a>
+              ) : (
+                <Button
+                  size="slim"
+                  variant={action.primary ? "primary" : undefined}
+                  onClick={action.onAction}
+                >
+                  {action.content}
+                </Button>
+              )}
             </Box>
           )}
           {children}
