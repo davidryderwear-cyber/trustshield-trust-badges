@@ -1336,7 +1336,7 @@ export default function BadgeConfig() {
                               <div style={{ width: `${payIconSize - 4}px`, height: `${payIconSize - 4}px`, color: useOriginalIconColor ? undefined : iconColor }} dangerouslySetInnerHTML={{ __html: BADGE_ICONS[badge.iconKey]?.svg || "" }} />
                             )}
                           </div>
-                          <span style={{ fontSize: `${fontSize}px`, fontWeight: 500, color: textColor, textAlign: "center", lineHeight: 1.1 }}>{badge.label}</span>
+                          <span style={{ fontSize: `${Math.min(fontSize, 11)}px`, fontWeight: 500, color: textColor, textAlign: "center", lineHeight: 1.2, maxWidth: `${payIconSize + 12}px`, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block" }}>{badge.label}</span>
                         </div>
                       );
                     })}
@@ -1398,8 +1398,9 @@ export default function BadgeConfig() {
                           flexDirection: "column",
                           alignItems: "center",
                           gap: 4,
-                          flex: layout === "horizontal" ? "1 1 0" : undefined,
-                          minWidth: 0,
+                          flex: "0 0 auto",
+                          minWidth: `${iconSize + 16}px`,
+                          maxWidth: "110px",
                         }}
                       >
                         <div style={{
@@ -1418,9 +1419,9 @@ export default function BadgeConfig() {
                             <div style={{ width: `${iconSize - 4}px`, height: `${iconSize - 4}px`, color: useOriginalIconColor ? undefined : iconColor }} dangerouslySetInnerHTML={{ __html: BADGE_ICONS[badge.iconKey]?.svg || "" }} />
                           )}
                         </div>
-                        <span style={{ fontSize: `${fontSize}px`, fontWeight: 600, color: textColor, textAlign: "center", lineHeight: 1.2, wordBreak: "break-word" }}>{badge.label}</span>
+                        <span style={{ fontSize: `${fontSize}px`, fontWeight: 600, color: textColor, textAlign: "center", lineHeight: 1.2, overflowWrap: "break-word", width: "100%" }}>{badge.label}</span>
                         {badge.subtitle && (
-                          <span style={{ fontSize: `${subtitleFontSize}px`, fontWeight: 400, color: subtitleColor, textAlign: "center", lineHeight: 1.3, wordBreak: "break-word" }}>{badge.subtitle}</span>
+                          <span style={{ fontSize: `${subtitleFontSize}px`, fontWeight: 400, color: subtitleColor, textAlign: "center", lineHeight: 1.3, overflowWrap: "break-word", width: "100%" }}>{badge.subtitle}</span>
                         )}
                       </div>
                     ))}
