@@ -742,11 +742,15 @@ export default function BadgeConfig() {
           <Divider />
 
           {/* Translations */}
-          <BlockStack gap="300">
+          <BlockStack gap="200">
             <Text as="h2" variant="headingMd">Translations</Text>
-            <Text as="p" variant="bodySm" tone="subdued">
-              Translations are managed automatically based on your store's language settings.
-            </Text>
+            <Button disabled={!limits.scheduling} onClick={() => {}}>Add translation</Button>
+            {!limits.scheduling && (
+              <Text as="p" variant="bodySm" tone="subdued">
+                Available with Essential plan.{" "}
+                <a href="/app/billing" style={{ color: "#005bd3" }}>Upgrade now</a>.
+              </Text>
+            )}
           </BlockStack>
 
           <Divider />
@@ -754,51 +758,51 @@ export default function BadgeConfig() {
           {/* Scheduling */}
           <BlockStack gap="300">
             <Text as="h2" variant="headingMd">Scheduling</Text>
+            {!limits.scheduling && (
+              <Text as="p" variant="bodySm" tone="subdued">
+                Available with Essential plan.{" "}
+                <a href="/app/billing" style={{ color: "#005bd3" }}>Upgrade now</a>.
+              </Text>
+            )}
             <BlockStack gap="400">
               {/* Starts */}
               <BlockStack gap="200">
                 <Text as="p" variant="bodyMd" fontWeight="semibold">Starts</Text>
-                <InlineStack gap="300">
+                <BlockStack gap="100">
                   <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
                     <input type="radio" name="startsOption" value="now" checked={startsOption === "now"}
                       onChange={() => { setStartsOption("now"); setStartsAt(null); }} />
                     Right now
                   </label>
-                  <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", opacity: !limits.scheduling ? 0.5 : 1 }}>
+                  <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: !limits.scheduling ? "not-allowed" : "pointer", opacity: !limits.scheduling ? 0.5 : 1 }}>
                     <input type="radio" name="startsOption" value="specific" checked={startsOption === "specific"}
                       onChange={() => limits.scheduling && setStartsOption("specific")}
                       disabled={!limits.scheduling} />
                     Specific date
                   </label>
-                </InlineStack>
+                </BlockStack>
                 {startsOption === "specific" && limits.scheduling && (
                   <input type="datetime-local" value={startsAt || ""} onChange={(e) => setStartsAt(e.target.value)}
                     style={{ padding: "8px 12px", borderRadius: 8, border: "1px solid #c5c8d1", fontSize: 14, maxWidth: 280 }} />
-                )}
-                {!limits.scheduling && (
-                  <Text as="p" variant="bodySm" tone="subdued">
-                    Scheduling is available with Essential plan.{" "}
-                    <a href="/app/billing" style={{ color: "#005bd3" }}>Upgrade now</a>.
-                  </Text>
                 )}
               </BlockStack>
 
               {/* Ends */}
               <BlockStack gap="200">
                 <Text as="p" variant="bodyMd" fontWeight="semibold">Ends</Text>
-                <InlineStack gap="300">
+                <BlockStack gap="100">
                   <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
                     <input type="radio" name="endsOption" value="never" checked={endsOption === "never"}
                       onChange={() => { setEndsOption("never"); setEndsAt(null); }} />
                     Never
                   </label>
-                  <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", opacity: !limits.scheduling ? 0.5 : 1 }}>
+                  <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: !limits.scheduling ? "not-allowed" : "pointer", opacity: !limits.scheduling ? 0.5 : 1 }}>
                     <input type="radio" name="endsOption" value="specific" checked={endsOption === "specific"}
                       onChange={() => limits.scheduling && setEndsOption("specific")}
                       disabled={!limits.scheduling} />
                     Specific date
                   </label>
-                </InlineStack>
+                </BlockStack>
                 {endsOption === "specific" && limits.scheduling && (
                   <input type="datetime-local" value={endsAt || ""} onChange={(e) => setEndsAt(e.target.value)}
                     style={{ padding: "8px 12px", borderRadius: 8, border: "1px solid #c5c8d1", fontSize: 14, maxWidth: 280 }} />
@@ -810,11 +814,9 @@ export default function BadgeConfig() {
           <Divider />
 
           {/* Continue to design */}
-          <InlineStack align="end">
-            <Button variant="primary" onClick={() => setSelectedTab(1)}>
-              Continue to design
-            </Button>
-          </InlineStack>
+          <Button variant="primary" fullWidth onClick={() => setSelectedTab(1)}>
+            Continue to design
+          </Button>
 
         </BlockStack>
       </Card>
@@ -972,11 +974,9 @@ export default function BadgeConfig() {
           <Divider />
 
           {/* Continue to placement */}
-          <InlineStack align="end">
-            <Button variant="primary" onClick={() => setSelectedTab(2)}>
-              Continue to placement
-            </Button>
-          </InlineStack>
+          <Button variant="primary" fullWidth onClick={() => setSelectedTab(2)}>
+            Continue to placement
+          </Button>
 
         </BlockStack>
       </Card>
