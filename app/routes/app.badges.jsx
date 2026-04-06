@@ -48,6 +48,7 @@ export const loader = async ({ request }) => {
     config: {
       ...config,
       badges,
+      configId: config.id,
       status: config.status || "draft",
       badgeName: config.badgeName || "Untitled Badge Set",
       badgeType: config.badgeType || "icon_block",
@@ -1018,6 +1019,76 @@ export default function BadgeConfig() {
                   <span style={{ paddingLeft: 24, display: "block" }}>{opt.description}</span>
                 </Text>
               )}
+              {opt.value === "custom" && targetType === "custom" && (
+                <div style={{ paddingLeft: 24, paddingTop: 12 }}>
+                  <BlockStack gap="300">
+                    <BlockStack gap="100">
+                      <Text as="p" variant="bodyMd" fontWeight="semibold">Badge ID</Text>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <input
+                          type="text"
+                          readOnly
+                          value={config.configId || ""}
+                          style={{
+                            flex: 1,
+                            padding: "8px 12px",
+                            borderRadius: 8,
+                            border: "1px solid #c5c8d1",
+                            fontSize: 13,
+                            fontFamily: "monospace",
+                            background: "#f6f6f7",
+                            color: "#303030",
+                          }}
+                        />
+                        <Button
+                          size="slim"
+                          onClick={() => {
+                            navigator.clipboard.writeText(config.configId || "");
+                            shopify.toast.show("Badge ID copied!");
+                          }}
+                        >
+                          Copy
+                        </Button>
+                      </div>
+                      <Text as="p" variant="bodySm" tone="subdued">
+                        You can use this badge id in theme editor.
+                      </Text>
+                    </BlockStack>
+                    <BlockStack gap="100">
+                      <Text as="p" variant="bodyMd" fontWeight="semibold">Code snippet</Text>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <input
+                          type="text"
+                          readOnly
+                          value={`<div class="trustshield-block" id="${config.configId || ""}"></div>`}
+                          style={{
+                            flex: 1,
+                            padding: "8px 12px",
+                            borderRadius: 8,
+                            border: "1px solid #c5c8d1",
+                            fontSize: 13,
+                            fontFamily: "monospace",
+                            background: "#f6f6f7",
+                            color: "#303030",
+                          }}
+                        />
+                        <Button
+                          size="slim"
+                          onClick={() => {
+                            navigator.clipboard.writeText(`<div class="trustshield-block" id="${config.configId || ""}"></div>`);
+                            shopify.toast.show("Code snippet copied!");
+                          }}
+                        >
+                          Copy
+                        </Button>
+                      </div>
+                      <Text as="p" variant="bodySm" tone="subdued">
+                        You can use this code snippet anywhere in your theme.
+                      </Text>
+                    </BlockStack>
+                  </BlockStack>
+                </div>
+              )}
             </BlockStack>
           ))}
         </BlockStack>
@@ -1028,9 +1099,10 @@ export default function BadgeConfig() {
         <BlockStack gap="300">
           <Text as="h2" variant="headingMd">Geolocation targeting</Text>
           {!limits.geolocation && (
-            <Banner tone="info">
-              Available with Essential plan. <a href="/app/billing">Upgrade now</a>.
-            </Banner>
+            <Text as="p" variant="bodySm" tone="subdued">
+              Available with Essential plan.{" "}
+              <a href="/app/billing" style={{ color: "#005bd3" }}>Upgrade now</a>.
+            </Text>
           )}
           <BlockStack gap="100">
             <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontSize: 14 }}>
@@ -1278,12 +1350,22 @@ export default function BadgeConfig() {
       }}
       secondaryActions={[
         {
+          content: "Duplicate",
+          onAction: () => {},
+        },
+        {
+          content: "Delete",
+          onAction: () => {},
+          destructive: true,
+        },
+        {
           content: isSaving ? "Saving..." : "Save Draft",
           onAction: () => handleSave("draft"),
           loading: isSaving,
+          destructive: false,
         },
       ]}
-      backAction={{ content: "Dashboard", url: "/app" }}
+      backAction={{ content: "Your badges", url: "/app" }}
     >
       <BlockStack gap="400">
         {saved && (
