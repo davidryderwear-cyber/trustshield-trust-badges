@@ -1343,6 +1343,22 @@ export default function BadgeConfig() {
           {badgeStatus === "published" ? "Published" : "Draft"}
         </Badge>
       }
+      additionalMetadata={
+        <InlineStack gap="200" blockAlign="center">
+          <Text as="span" variant="bodySm" tone="subdued">Badge ID:</Text>
+          <Text as="span" variant="bodySm" tone="subdued">{config.configId}</Text>
+          <button
+            onClick={() => { navigator.clipboard.writeText(config.configId || ""); shopify.toast.show("Badge ID copied!"); }}
+            style={{ background: "none", border: "none", cursor: "pointer", padding: 2, display: "flex", alignItems: "center" }}
+            title="Copy Badge ID"
+          >
+            <svg width="14" height="14" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="7" y="7" width="10" height="10" rx="2" stroke="#6d7175" strokeWidth="1.5"/>
+              <path d="M13 7V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2" stroke="#6d7175" strokeWidth="1.5"/>
+            </svg>
+          </button>
+        </InlineStack>
+      }
       primaryAction={{
         content: isSaving ? "Publishing..." : "Publish",
         onAction: () => handleSave("published"),
@@ -1357,12 +1373,6 @@ export default function BadgeConfig() {
           content: "Delete",
           onAction: () => {},
           destructive: true,
-        },
-        {
-          content: isSaving ? "Saving..." : "Save Draft",
-          onAction: () => handleSave("draft"),
-          loading: isSaving,
-          destructive: false,
         },
       ]}
       backAction={{ content: "Your badges", url: "/app" }}
