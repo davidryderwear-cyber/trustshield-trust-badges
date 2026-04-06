@@ -581,10 +581,9 @@ export default function BadgeConfig() {
                 value={titleAboveIcons}
                 onChange={setTitleAboveIcons}
                 autoComplete="off"
-                placeholder="e.g. Why shop with us?"
               />
               {badges.map((badge, index) => (
-                <BlockStack key={badge.id} gap="200">
+                <BlockStack key={badge.id} gap="300">
                   <Text as="p" variant="bodyMd" fontWeight="bold">Icon #{index + 1}</Text>
                   <TextField
                     label="Title"
@@ -598,21 +597,54 @@ export default function BadgeConfig() {
                     onChange={(val) => updateBadge(badge.id, "subtitle", val)}
                     autoComplete="off"
                   />
-                  <InlineStack gap="300" blockAlign="center">
-                    <Text as="p" variant="bodySm">Icon:</Text>
-                    {badge.type === "custom" ? (
-                      <img src={badge.imageUrl} alt={badge.label} style={{ width: 32, height: 32, objectFit: "contain" }} />
-                    ) : (
-                      <div style={{ minWidth: 32, width: 32, height: 32, color: iconColor }}
-                        dangerouslySetInnerHTML={{ __html: BADGE_ICONS[badge.iconKey]?.svg || "" }} />
+                  {/* Icon */}
+                  <BlockStack gap="100">
+                    <Text as="p" variant="bodyMd" fontWeight="semibold">Icon</Text>
+                    <InlineStack gap="300" blockAlign="center">
+                      {badge.type === "custom" ? (
+                        <img src={badge.imageUrl} alt={badge.label} style={{ width: 40, height: 40, objectFit: "contain" }} />
+                      ) : (
+                        <div style={{ minWidth: 40, width: 40, height: 40, color: iconColor }}
+                          dangerouslySetInnerHTML={{ __html: BADGE_ICONS[badge.iconKey]?.svg || "" }} />
+                      )}
+                      <Button size="slim" onClick={() => removeBadge(badge.id)}>Remove icon</Button>
+                      <Button size="slim" onClick={() => setAddModalOpen(true)}>Upload Icon</Button>
+                    </InlineStack>
+                    {!limits.customUpload && (
+                      <Text as="p" variant="bodySm" tone="subdued">
+                        Available with Starter plan.{" "}
+                        <a href="/app/billing" style={{ color: "#005bd3" }}>Upgrade now</a>.
+                      </Text>
                     )}
-                    <Button size="slim" tone="critical" onClick={() => removeBadge(badge.id)}>Remove icon</Button>
+                  </BlockStack>
+                  {/* Call to action */}
+                  <Select
+                    label="Call to action"
+                    options={[
+                      { label: "No call to action", value: "none" },
+                      { label: "Link URL", value: "link" },
+                    ]}
+                    value={badge.callToAction || "none"}
+                    onChange={(val) => updateBadge(badge.id, "callToAction", val)}
+                  />
+                  {/* Reorder + Remove row */}
+                  <InlineStack align="space-between" blockAlign="center">
+                    <InlineStack gap="100">
+                      <Button size="slim" onClick={() => moveBadge(index, -1)} disabled={index === 0}>∧</Button>
+                      <Button size="slim" onClick={() => moveBadge(index, 1)} disabled={index === badges.length - 1}>∨</Button>
+                    </InlineStack>
+                    <button
+                      onClick={() => removeBadge(badge.id)}
+                      style={{ background: "none", border: "none", color: "#d72c0d", cursor: "pointer", fontSize: 14, padding: 0 }}
+                    >
+                      Remove icon
+                    </button>
                   </InlineStack>
                   {index < badges.length - 1 && <Divider />}
                 </BlockStack>
               ))}
               <Button onClick={() => setAddModalOpen(true)} disabled={badges.length >= limits.maxBadges}>
-                Add icon
+                Add new icon
               </Button>
             </BlockStack>
           )}
@@ -709,59 +741,81 @@ export default function BadgeConfig() {
 
           <Divider />
 
+          {/* Translations */}
+          <BlockStack gap="300">
+            <Text as="h2" variant="headingMd">Translations</Text>
+            <Text as="p" variant="bodySm" tone="subdued">
+              Translations are managed automatically based on your store's language settings.
+            </Text>
+          </BlockStack>
+
+          <Divider />
+
           {/* Scheduling */}
           <BlockStack gap="300">
             <Text as="h2" variant="headingMd">Scheduling</Text>
-            {!limits.scheduling ? (
-              <Banner tone="info">
-                Available with Essential plan. <a href="/app/billing">Upgrade now</a>.
-              </Banner>
-            ) : (
-              <BlockStack gap="400">
-                {/* Starts */}
-                <BlockStack gap="200">
-                  <Text as="p" variant="bodyMd" fontWeight="semibold">Starts</Text>
-                  <InlineStack gap="300">
-                    <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
-                      <input type="radio" name="startsOption" value="now" checked={startsOption === "now"}
-                        onChange={() => { setStartsOption("now"); setStartsAt(null); }} />
-                      Right now
-                    </label>
-                    <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
-                      <input type="radio" name="startsOption" value="specific" checked={startsOption === "specific"}
-                        onChange={() => setStartsOption("specific")} />
-                      Specific date
-                    </label>
-                  </InlineStack>
-                  {startsOption === "specific" && (
-                    <input type="datetime-local" value={startsAt || ""} onChange={(e) => setStartsAt(e.target.value)}
-                      style={{ padding: "8px 12px", borderRadius: 8, border: "1px solid #c5c8d1", fontSize: 14, maxWidth: 280 }} />
-                  )}
-                </BlockStack>
-
-                {/* Ends */}
-                <BlockStack gap="200">
-                  <Text as="p" variant="bodyMd" fontWeight="semibold">Ends</Text>
-                  <InlineStack gap="300">
-                    <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
-                      <input type="radio" name="endsOption" value="never" checked={endsOption === "never"}
-                        onChange={() => { setEndsOption("never"); setEndsAt(null); }} />
-                      Never
-                    </label>
-                    <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
-                      <input type="radio" name="endsOption" value="specific" checked={endsOption === "specific"}
-                        onChange={() => setEndsOption("specific")} />
-                      Specific date
-                    </label>
-                  </InlineStack>
-                  {endsOption === "specific" && (
-                    <input type="datetime-local" value={endsAt || ""} onChange={(e) => setEndsAt(e.target.value)}
-                      style={{ padding: "8px 12px", borderRadius: 8, border: "1px solid #c5c8d1", fontSize: 14, maxWidth: 280 }} />
-                  )}
-                </BlockStack>
+            <BlockStack gap="400">
+              {/* Starts */}
+              <BlockStack gap="200">
+                <Text as="p" variant="bodyMd" fontWeight="semibold">Starts</Text>
+                <InlineStack gap="300">
+                  <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
+                    <input type="radio" name="startsOption" value="now" checked={startsOption === "now"}
+                      onChange={() => { setStartsOption("now"); setStartsAt(null); }} />
+                    Right now
+                  </label>
+                  <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", opacity: !limits.scheduling ? 0.5 : 1 }}>
+                    <input type="radio" name="startsOption" value="specific" checked={startsOption === "specific"}
+                      onChange={() => limits.scheduling && setStartsOption("specific")}
+                      disabled={!limits.scheduling} />
+                    Specific date
+                  </label>
+                </InlineStack>
+                {startsOption === "specific" && limits.scheduling && (
+                  <input type="datetime-local" value={startsAt || ""} onChange={(e) => setStartsAt(e.target.value)}
+                    style={{ padding: "8px 12px", borderRadius: 8, border: "1px solid #c5c8d1", fontSize: 14, maxWidth: 280 }} />
+                )}
+                {!limits.scheduling && (
+                  <Text as="p" variant="bodySm" tone="subdued">
+                    Scheduling is available with Essential plan.{" "}
+                    <a href="/app/billing" style={{ color: "#005bd3" }}>Upgrade now</a>.
+                  </Text>
+                )}
               </BlockStack>
-            )}
+
+              {/* Ends */}
+              <BlockStack gap="200">
+                <Text as="p" variant="bodyMd" fontWeight="semibold">Ends</Text>
+                <InlineStack gap="300">
+                  <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
+                    <input type="radio" name="endsOption" value="never" checked={endsOption === "never"}
+                      onChange={() => { setEndsOption("never"); setEndsAt(null); }} />
+                    Never
+                  </label>
+                  <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", opacity: !limits.scheduling ? 0.5 : 1 }}>
+                    <input type="radio" name="endsOption" value="specific" checked={endsOption === "specific"}
+                      onChange={() => limits.scheduling && setEndsOption("specific")}
+                      disabled={!limits.scheduling} />
+                    Specific date
+                  </label>
+                </InlineStack>
+                {endsOption === "specific" && limits.scheduling && (
+                  <input type="datetime-local" value={endsAt || ""} onChange={(e) => setEndsAt(e.target.value)}
+                    style={{ padding: "8px 12px", borderRadius: 8, border: "1px solid #c5c8d1", fontSize: 14, maxWidth: 280 }} />
+                )}
+              </BlockStack>
+            </BlockStack>
           </BlockStack>
+
+          <Divider />
+
+          {/* Continue to design */}
+          <InlineStack align="end">
+            <Button variant="primary" onClick={() => setSelectedTab(1)}>
+              Continue to design
+            </Button>
+          </InlineStack>
+
         </BlockStack>
       </Card>
     </BlockStack>
@@ -914,6 +968,16 @@ export default function BadgeConfig() {
               </BlockStack>
             </>
           )}
+
+          <Divider />
+
+          {/* Continue to placement */}
+          <InlineStack align="end">
+            <Button variant="primary" onClick={() => setSelectedTab(2)}>
+              Continue to placement
+            </Button>
+          </InlineStack>
+
         </BlockStack>
       </Card>
     </BlockStack>
