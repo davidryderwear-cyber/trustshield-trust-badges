@@ -252,6 +252,9 @@ export default function BadgeConfig() {
   const [subtitleColor, setSubtitleColor] = useState(config.subtitleColor || "#96a4b6");
   const [customCSS, setCustomCSS] = useState(config.customCSS);
   const [titleGap, setTitleGap] = useState(config.titleGap ?? 12);
+  const [iconsPerRowDesktop, setIconsPerRowDesktop] = useState(config.iconsPerRowDesktop ?? 3);
+  const [iconsPerRowMobile, setIconsPerRowMobile] = useState(config.iconsPerRowMobile ?? 3);
+  const [font, setFont] = useState(config.font || "theme");
 
   // --- Placement state ---
   const [showOnProduct, setShowOnProduct] = useState(config.showOnProduct);
@@ -382,7 +385,7 @@ export default function BadgeConfig() {
   // --- PxInput: clean number + px label (like Essential) ---
   const PxInput = ({ label, value, onChange, min = 0, max = 100 }) => (
     <BlockStack gap="100">
-      <Text as="p" variant="bodySm" tone="subdued">{label}</Text>
+      {label ? <Text as="p" variant="bodySm" tone="subdued">{label}</Text> : null}
       <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
         <input
           type="number"
@@ -460,9 +463,10 @@ export default function BadgeConfig() {
   }, []);
 
   // --- Color input helper ---
-  const ColorField = ({ label, value, onChange, disabled, helpText }) => (
+  const ColorField = ({ label, labelHidden, value, onChange, disabled, helpText }) => (
     <TextField
-      label={label}
+      label={label || " "}
+      labelHidden={labelHidden || !label}
       value={value}
       onChange={onChange}
       autoComplete="off"
@@ -864,7 +868,7 @@ export default function BadgeConfig() {
                 </label>
               </InlineStack>
               {!bgGradient ? (
-                <ColorField label="Background color" value={bgColor} onChange={setBgColor} />
+                <ColorField label="Background color" labelHidden value={bgColor} onChange={setBgColor} />
               ) : (
                 <InlineGrid columns={2} gap="300">
                   <ColorField label="Gradient start" value={bgColor} onChange={setBgColor} />
@@ -899,34 +903,38 @@ export default function BadgeConfig() {
           {/* 4. Icon */}
           <BlockStack gap="300">
             <Text as="h2" variant="headingMd">Icon</Text>
-            <PxInput label="Icon size" value={iconSize} onChange={setIconSize} min={16} max={80} />
-            <Checkbox label="Use original icon color" checked={useOriginalIconColor} onChange={setUseOriginalIconColor} />
-            {!useOriginalIconColor && (
-              <ColorField label="Icon color" value={iconColor} onChange={setIconColor}
-                disabled={!limits.customColors} helpText={!limits.customColors ? "Upgrade to customize" : ""} />
-            )}
-            <ColorField label="Icon background color" value={iconBgColor} onChange={setIconBgColor} />
-            <BlockStack gap="200">
-              <Text as="p" variant="bodyMd" fontWeight="semibold">Background shape</Text>
-              <InlineStack gap="200" wrap>
-                {ICON_SHAPES.map((shape) => {
-                  const r = shape.radius === 999 ? "50%" : `${shape.radius}px`;
-                  const active = iconCornerRadius === shape.radius;
-                  return (
-                    <button key={shape.label} onClick={() => setIconCornerRadius(shape.radius)} style={{
-                      display: "flex", flexDirection: "column", alignItems: "center", gap: 5,
-                      padding: "8px 12px", borderRadius: 8, cursor: "pointer", minWidth: 60,
-                      border: `2px solid ${active ? "#303030" : "#e1e3e5"}`,
-                      background: active ? "#f0f0f0" : "#fff",
-                    }}>
-                      <div style={{ width: 30, height: 30, borderRadius: r, background: iconBgColor, border: `1.5px solid ${borderColor}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                        <div style={{ width: 14, height: 14, borderRadius: 2, background: iconColor, opacity: 0.8 }} />
-                      </div>
-                      <span style={{ fontSize: 11, fontWeight: active ? 600 : 400, color: active ? "#303030" : "#6d7175" }}>{shape.label}</span>
-                    </button>
-                  );
-                })}
-              </InlineStack>
+            <div style={{ display: "flex", alignItems: "flex-end", gap: 24 }}>
+              <PxInput label="Icon size" value={iconSize} onChange={setIconSize} min={16} max={80} />
+              <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", fontSize: 14, paddingBottom: 6 }}>
+                <input
+                  type="checkbox"
+                  checked={useOriginalIconColor}
+                  onChange={(e) => setUseOriginalIconColor(e.target.checked)}
+                  style={{ width: 16, height: 16, cursor: "pointer" }}
+                />
+                Use original icon color
+              </label>
+            </div>
+            <ColorField label="Icon color" value={iconColor} onChange={setIconColor}
+              disabled={useOriginalIconColor} />
+            <ColorField label="Background color" value={iconBgColor} onChange={setIconBgColor} />
+            <PxInput label="Corner radius" value={Math.min(iconCornerRadius, 50)} onChange={setIconCornerRadius} min={0} max={50} />
+            <BlockStack gap="100">
+              <Text as="p" variant="bodyMd" fontWeight="semibold">Icons displayed in one row</Text>
+              <InlineGrid columns={2} gap="300">
+                <Select
+                  label="Desktop"
+                  options={[2, 3, 4, 5, 6].map((n) => ({ label: String(n), value: String(n) }))}
+                  value={String(iconsPerRowDesktop)}
+                  onChange={(v) => setIconsPerRowDesktop(Number(v))}
+                />
+                <Select
+                  label="Mobile"
+                  options={[1, 2, 3, 4].map((n) => ({ label: String(n), value: String(n) }))}
+                  value={String(iconsPerRowMobile)}
+                  onChange={(v) => setIconsPerRowMobile(Number(v))}
+                />
+              </InlineGrid>
             </BlockStack>
           </BlockStack>
 
@@ -935,30 +943,41 @@ export default function BadgeConfig() {
           {/* 6. Typography */}
           <BlockStack gap="300">
             <Text as="h2" variant="headingMd">Typography</Text>
-            <InlineGrid columns={2} gap="300">
-              <PxInput label="Title size" value={fontSize} onChange={setFontSize} min={10} max={28} />
-              <ColorField label="Title color" value={textColor} onChange={setTextColor}
-                disabled={!limits.customColors} helpText={!limits.customColors ? "Upgrade to customize" : ""} />
-            </InlineGrid>
-            <InlineGrid columns={2} gap="300">
-              <PxInput label="Subtitle size" value={subtitleFontSize} onChange={setSubtitleFontSize} min={8} max={22} />
-              <ColorField label="Subtitle color" value={subtitleColor} onChange={setSubtitleColor} disabled={!limits.customColors} />
-            </InlineGrid>
+            <Select
+              label="Font"
+              options={[
+                { label: "Use your theme fonts", value: "theme" },
+              ]}
+              value={font}
+              onChange={setFont}
+            />
+            <Text as="p" variant="bodySm" tone="subdued">
+              Theme fonts are not available in the preview mode. Publish to preview it in store.
+            </Text>
+            <BlockStack gap="100">
+              <Text as="p" variant="bodyMd" fontWeight="semibold">Title size and color</Text>
+              <InlineGrid columns={2} gap="300">
+                <PxInput label="" value={fontSize} onChange={setFontSize} min={10} max={28} />
+                <ColorField label="Title color" labelHidden value={textColor} onChange={setTextColor} />
+              </InlineGrid>
+            </BlockStack>
+            <BlockStack gap="100">
+              <Text as="p" variant="bodyMd" fontWeight="semibold">Icon title size and color</Text>
+              <InlineGrid columns={2} gap="300">
+                <PxInput label="" value={fontSize} onChange={setFontSize} min={10} max={28} />
+                <ColorField label="Icon title color" labelHidden value={textColor} onChange={setTextColor} />
+              </InlineGrid>
+            </BlockStack>
+            <BlockStack gap="100">
+              <Text as="p" variant="bodyMd" fontWeight="semibold">Icon subheading size and color</Text>
+              <InlineGrid columns={2} gap="300">
+                <PxInput label="" value={subtitleFontSize} onChange={setSubtitleFontSize} min={8} max={22} />
+                <ColorField label="Icon subheading color" labelHidden value={subtitleColor} onChange={setSubtitleColor} />
+              </InlineGrid>
+            </BlockStack>
           </BlockStack>
 
           <Divider />
-
-          {/* 8. Layout */}
-          <BlockStack gap="300">
-            <Text as="h2" variant="headingMd">Layout</Text>
-            <Select label="Badge arrangement"
-              options={[{ label: "Horizontal (row)", value: "horizontal" }, { label: "Vertical (column)", value: "vertical" }, { label: "Grid", value: "grid" }]}
-              value={layout} onChange={setLayout} />
-            <Select label="Alignment"
-              options={[{ label: "Left", value: "left" }, { label: "Center", value: "center" }, { label: "Right", value: "right" }]}
-              value={alignment} onChange={setAlignment} />
-            <PxInput label="Max width" value={maxWidth} onChange={setMaxWidth} min={200} max={1200} />
-          </BlockStack>
 
           {/* Custom CSS — gated, at bottom */}
           {limits.customCSS && (
