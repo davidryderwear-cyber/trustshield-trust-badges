@@ -952,7 +952,7 @@ export default function BadgeConfig() {
               onChange={setFont}
             />
             <Text as="p" variant="bodySm" tone="subdued">
-              Theme fonts are not available in the preview mode. Publish to preview it in store.
+              Theme fonts are not available in the preview mode. Publish timer to preview it in store.
             </Text>
             <BlockStack gap="100">
               <Text as="p" variant="bodyMd" fontWeight="semibold">Title size and color</Text>
