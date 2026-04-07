@@ -11,7 +11,6 @@ import {
   TextField,
   Select,
   RangeSlider,
-  Checkbox,
   Banner,
   Divider,
   Modal,
@@ -19,7 +18,6 @@ import {
   Box,
   InlineGrid,
   Tabs,
-  Icon,
 } from "@shopify/polaris";
 import { authenticate } from "../shopify.server";
 import prisma from "../db.server";
@@ -208,17 +206,50 @@ export default function BadgeConfig() {
   const [searchParams] = useSearchParams();
   const isSaving = navigation.state === "submitting";
 
+  // Default badge sets per type — shown when no badges are saved yet
+  const DEFAULT_BADGES_BY_TYPE = {
+    icon_block: [
+      { id: "default_1", iconKey: "free_shipping",  label: "Free Shipping",  subtitle: "No Extra Costs",  type: "preset", enabled: true },
+      { id: "default_2", iconKey: "easy_returns",   label: "Easy Returns",   subtitle: "Return with Ease", type: "preset", enabled: true },
+      { id: "default_3", iconKey: "secure_checkout", label: "Secure Checkout", subtitle: "Secure Payment", type: "preset", enabled: true },
+    ],
+    single_banner: [
+      { id: "default_1", iconKey: "secure_checkout", label: "Secure Checkout", subtitle: "Your payment info is safe with us", type: "preset", enabled: true },
+    ],
+    minimal_icons: [
+      { id: "default_1", iconKey: "free_shipping",  label: "Free Shipping",  subtitle: "No Extra Costs",  type: "preset", enabled: true },
+      { id: "default_2", iconKey: "easy_returns",   label: "Easy Returns",   subtitle: "Return with Ease", type: "preset", enabled: true },
+      { id: "default_3", iconKey: "secure_checkout", label: "Secure Checkout", subtitle: "Secure Payment", type: "preset", enabled: true },
+    ],
+    compact_grid: [
+      { id: "default_1", iconKey: "visa",       label: "Visa",       subtitle: "", type: "preset", enabled: true },
+      { id: "default_2", iconKey: "mastercard", label: "Mastercard", subtitle: "", type: "preset", enabled: true },
+      { id: "default_3", iconKey: "paypal",     label: "PayPal",     subtitle: "", type: "preset", enabled: true },
+      { id: "default_4", iconKey: "amex",       label: "Amex",       subtitle: "", type: "preset", enabled: true },
+      { id: "default_5", iconKey: "apple_pay",  label: "Apple Pay",  subtitle: "", type: "preset", enabled: true },
+      { id: "default_6", iconKey: "google_pay", label: "Google Pay", subtitle: "", type: "preset", enabled: true },
+    ],
+  };
+
+  // Detect a fresh config (never saved by user) — used to apply smart defaults
+  const isNewConfig = config.badges.length === 0;
+
   // --- Tab state ---
   const [selectedTab, setSelectedTab] = useState(0);
 
   // --- Content state ---
-  const [badges, setBadges] = useState(config.badges);
+  const initialBadgeType = config.badgeType || "icon_block";
+  const [badges, setBadges] = useState(
+    config.badges.length > 0
+      ? config.badges
+      : (DEFAULT_BADGES_BY_TYPE[initialBadgeType] || DEFAULT_BADGES_BY_TYPE.icon_block)
+  );
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [uploadUrl, setUploadUrl] = useState("");
   const [uploadName, setUploadName] = useState("");
-  const [badgeType, setBadgeType] = useState(config.badgeType || searchParams.get("pageType") || "icon_block");
-  const [badgeName, setBadgeName] = useState(config.badgeName || "Untitled Badge Set");
+  const [badgeType, setBadgeType] = useState(initialBadgeType);
+  const [badgeName, setBadgeName] = useState(isNewConfig ? "Your badge" : (config.badgeName || "Your badge"));
   const [badgeStatus, setBadgeStatus] = useState(config.status || "draft");
   const [startsAt, setStartsAt] = useState(config.startsAt || null);
   const [endsAt, setEndsAt] = useState(config.endsAt || null);
@@ -232,7 +263,7 @@ export default function BadgeConfig() {
   const [iconSize, setIconSize] = useState(config.iconSize);
   const [iconColor, setIconColor] = useState(config.iconColor);
   const [textColor, setTextColor] = useState(config.textColor);
-  const [fontSize, setFontSize] = useState(config.fontSize);
+  const [fontSize, setFontSize] = useState(isNewConfig ? 14 : config.fontSize);
   const [spacing, setSpacing] = useState(config.spacing);
   const [maxWidth, setMaxWidth] = useState(config.maxWidth);
   const [bgColor, setBgColor] = useState(config.bgColor || "#ffffff");
@@ -240,16 +271,17 @@ export default function BadgeConfig() {
   const [bgColorEnd, setBgColorEnd] = useState(config.bgColorEnd || "#f4f6f8");
   const [cornerRadius, setCornerRadius] = useState(config.cornerRadius ?? 8);
   const [borderSize, setBorderSize] = useState(config.borderSize ?? 0);
-  const [borderColor, setBorderColor] = useState(config.borderColor || "#c5c8d1");
+  const [borderColor, setBorderColor] = useState(isNewConfig ? "#c5c8d1" : (config.borderColor || "#c5c8d1"));
   const [paddingTop, setPaddingTop] = useState(config.paddingTop ?? 16);
   const [paddingBottom, setPaddingBottom] = useState(config.paddingBottom ?? 16);
   const [marginTop, setMarginTop] = useState(config.marginTop ?? 20);
   const [marginBottom, setMarginBottom] = useState(config.marginBottom ?? 20);
-  const [iconBgColor, setIconBgColor] = useState(config.iconBgColor || "#ffffff");
+  const [iconBgColor, setIconBgColor] = useState(isNewConfig ? "#f4f6f8" : (config.iconBgColor || "#ffffff"));
   const [iconCornerRadius, setIconCornerRadius] = useState(config.iconCornerRadius ?? 4);
   const [useOriginalIconColor, setUseOriginalIconColor] = useState(config.useOriginalIconColor ?? false);
   const [subtitleFontSize, setSubtitleFontSize] = useState(config.subtitleFontSize ?? 14);
   const [subtitleColor, setSubtitleColor] = useState(config.subtitleColor || "#96a4b6");
+  const [designTemplate, setDesignTemplate] = useState(isNewConfig ? "minimal" : "");
   const [customCSS, setCustomCSS] = useState(config.customCSS);
   const [titleGap, setTitleGap] = useState(config.titleGap ?? 12);
   const [iconsPerRowDesktop, setIconsPerRowDesktop] = useState(config.iconsPerRowDesktop ?? 3);
@@ -410,7 +442,7 @@ export default function BadgeConfig() {
 
   // --- Design Templates (full preset applied at once) ---
   const DESIGN_TEMPLATES = [
-    { label: "Minimal", value: "minimal",   bg: "#ffffff", iconBg: "#f4f6f8", icon: "#333333", text: "#202223", border: "#e1e3e5", cornerRadius: 8,  borderSize: 0, fontSize: 14, iconSize: 32, iconCornerRadius: 4  },
+    { label: "Minimal", value: "minimal",   bg: "#ffffff", iconBg: "#f4f6f8", icon: "#333333", text: "#202223", border: "#c5c8d1", cornerRadius: 8,  borderSize: 0, fontSize: 14, iconSize: 32, iconCornerRadius: 4  },
     { label: "Classic", value: "classic",   bg: "#f9fafb", iconBg: "#e3e5e7", icon: "#444444", text: "#202223", border: "#c5c8d1", cornerRadius: 8,  borderSize: 1, fontSize: 14, iconSize: 32, iconCornerRadius: 6  },
     { label: "Ocean",   value: "ocean",     bg: "#f0f7ff", iconBg: "#dbeafe", icon: "#1d4ed8", text: "#1e3a5f", border: "#bfdbfe", cornerRadius: 10, borderSize: 1, fontSize: 14, iconSize: 32, iconCornerRadius: 8  },
     { label: "Forest",  value: "forest",    bg: "#f0fdf4", iconBg: "#d1fae5", icon: "#059669", text: "#065f46", border: "#6ee7b7", cornerRadius: 10, borderSize: 1, fontSize: 14, iconSize: 32, iconCornerRadius: 8  },
@@ -421,6 +453,7 @@ export default function BadgeConfig() {
   ];
 
   const applyDesignTemplate = useCallback((templateValue) => {
+    setDesignTemplate(templateValue);
     const t = DESIGN_TEMPLATES.find((d) => d.value === templateValue);
     if (!t) return;
     setBgColor(t.bg);
@@ -505,7 +538,13 @@ export default function BadgeConfig() {
             ].map((opt) => (
               <label key={opt.value} style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontSize: 14 }}>
                 <input type="radio" name="badgeType" value={opt.value} checked={badgeType === opt.value}
-                  onChange={() => setBadgeType(opt.value)} />
+                  onChange={() => {
+                    setBadgeType(opt.value);
+                    // For fresh configs (never saved), switch to type-appropriate defaults
+                    if (isNewConfig) {
+                      setBadges(DEFAULT_BADGES_BY_TYPE[opt.value] || []);
+                    }
+                  }} />
                 {opt.label}
               </label>
             ))}
@@ -846,7 +885,7 @@ export default function BadgeConfig() {
                 { label: "Choose a template...", value: "" },
                 ...DESIGN_TEMPLATES.map((t) => ({ label: t.label, value: t.value })),
               ]}
-              value=""
+              value={designTemplate}
               onChange={(val) => val && applyDesignTemplate(val)}
             />
           </BlockStack>
