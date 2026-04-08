@@ -1,6 +1,7 @@
 import { BADGE_ICONS } from "./badge-presets";
 
-function transformBadges(badgesJson) {
+/** @internal — exported for testing */
+export function transformBadges(badgesJson) {
   let badges;
   if (typeof badgesJson === "string") {
     try {
@@ -39,7 +40,8 @@ export function shouldSync(config) {
   return true;
 }
 
-function buildConfigPayload(config) {
+/** @internal — exported for testing */
+export function buildConfigPayload(config) {
   return {
     badges: transformBadges(config.badges),
     badgeType: config.badgeType || "icon_block",
