@@ -611,9 +611,18 @@ export default function BadgeConfig() {
                   { label: "No call to action", value: "none" },
                   { label: "Link URL", value: "link" },
                 ]}
-                value="none"
-                onChange={() => {}}
+                value={badges[0]?.callToAction || "none"}
+                onChange={(val) => { if (badges.length > 0) updateBadge(badges[0].id, "callToAction", val); }}
               />
+              {badges[0]?.callToAction === "link" && (
+                <TextField
+                  label="URL"
+                  value={badges[0]?.ctaUrl || ""}
+                  onChange={(val) => { if (badges.length > 0) updateBadge(badges[0].id, "ctaUrl", val); }}
+                  placeholder="https://example.com"
+                  type="url"
+                />
+              )}
             </BlockStack>
           )}
 
@@ -671,6 +680,15 @@ export default function BadgeConfig() {
                     value={badge.callToAction || "none"}
                     onChange={(val) => updateBadge(badge.id, "callToAction", val)}
                   />
+                  {badge.callToAction === "link" && (
+                    <TextField
+                      label="URL"
+                      value={badge.ctaUrl || ""}
+                      onChange={(val) => updateBadge(badge.id, "ctaUrl", val)}
+                      placeholder="https://example.com"
+                      type="url"
+                    />
+                  )}
                   {/* Reorder + Remove row */}
                   <InlineStack align="space-between" blockAlign="center">
                     <InlineStack gap="100">
