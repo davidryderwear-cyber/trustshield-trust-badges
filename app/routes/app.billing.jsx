@@ -31,7 +31,7 @@ export const loader = async ({ request }) => {
   try {
     const billingCheck = await billing.check({
       plans: PAID_PLANS,
-      isTest: process.env.NODE_ENV !== "production",
+      isTest: true,
     });
     hasActiveSubscription = billingCheck.hasActivePayment;
     activePlanName = billingCheck.appSubscriptions?.[0]?.name;
@@ -87,16 +87,17 @@ export const action = async ({ request }) => {
   try {
     await billing.require({
       plans: [planName],
-      isTest: process.env.NODE_ENV !== "production",
+      isTest: true,
       onFailure: async () => {
         return billing.request({
           plan: planName,
-          isTest: process.env.NODE_ENV !== "production",
+          isTest: true,
           returnUrl: `${appUrl}/app/billing`,
         });
       },
     });
 
+    // If we get here, the user already has this plan active
     await prisma.badgeConfig.upsert({
       where: { shop },
       update: { plan: planKey },
@@ -105,6 +106,11 @@ export const action = async ({ request }) => {
 
     return json({ success: true });
   } catch (error) {
+    // billing.request() throws a Response redirect to Shopify's approval page
+    // — let it through instead of catching it as an error
+    if (error instanceof Response) {
+      throw error;
+    }
     console.error("Billing request failed:", error);
     return json({ error: "Billing request failed" }, { status: 500 });
   }
