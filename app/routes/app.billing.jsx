@@ -95,15 +95,16 @@ export const action = async ({ request }) => {
     if (error instanceof Response) {
       throw error;
     }
-    // Billing API fails if app isn't listed on App Store yet
-    const errorMsg = error?.message || String(error);
-    if (errorMsg.includes("public distribution")) {
+    // Extract meaningful error from Shopify's billing API response
+    const errorStr = JSON.stringify(error) + (error?.message || "") + String(error);
+    console.error("Billing request failed:", errorStr);
+
+    if (errorStr.includes("public distribution")) {
       return json({
         error: "Billing is not available yet — the app needs to be listed on the Shopify App Store first. For now, all features are unlocked for testing.",
       });
     }
-    console.error("Billing request failed:", error);
-    return json({ error: "Billing request failed. Please try again." }, { status: 500 });
+    return json({ error: "Billing request failed. Please try again later." }, { status: 500 });
   }
 };
 
