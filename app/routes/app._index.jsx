@@ -201,12 +201,7 @@ export default function Index() {
                     Setup guide
                   </Text>
                   <Text as="p" variant="bodySm" tone="subdued">
-                    Follow these steps to start using TrustShield. For help, check
-                    out our{" "}
-                    <Link url="https://trustshield.app/docs" external>
-                      documentation
-                    </Link>
-                    .
+                    Follow these steps to start using TrustShield.
                   </Text>
                 </BlockStack>
                 <Button
