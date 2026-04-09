@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 import { json } from "@remix-run/node";
-import { useLoaderData, useSubmit, useNavigation, useActionData, useSearchParams } from "@remix-run/react";
+import { useLoaderData, useSubmit, useNavigation, useActionData, useSearchParams, Link } from "@remix-run/react";
 import {
   Page,
   Card,
@@ -666,7 +666,7 @@ export default function BadgeConfig() {
                     {!limits.customUpload && (
                       <Text as="p" variant="bodySm" tone="subdued">
                         Available with Starter plan.{" "}
-                        <a href="/app/billing" style={{ color: "#005bd3" }}>Upgrade now</a>.
+                        <Link to="/app/billing" style={{ color: "#005bd3" }}>Upgrade now</Link>.
                       </Text>
                     )}
                   </BlockStack>
@@ -810,7 +810,7 @@ export default function BadgeConfig() {
             {!limits.scheduling && (
               <Text as="p" variant="bodySm" tone="subdued">
                 Available with Essential plan.{" "}
-                <a href="/app/billing" style={{ color: "#005bd3" }}>Upgrade now</a>.
+                <Link to="/app/billing" style={{ color: "#005bd3" }}>Upgrade now</Link>.
               </Text>
             )}
           </BlockStack>
@@ -823,7 +823,7 @@ export default function BadgeConfig() {
             {!limits.scheduling && (
               <Text as="p" variant="bodySm" tone="subdued">
                 Available with Essential plan.{" "}
-                <a href="/app/billing" style={{ color: "#005bd3" }}>Upgrade now</a>.
+                <Link to="/app/billing" style={{ color: "#005bd3" }}>Upgrade now</Link>.
               </Text>
             )}
             <BlockStack gap="400">
@@ -1177,7 +1177,7 @@ export default function BadgeConfig() {
           {!limits.geolocation && (
             <Text as="p" variant="bodySm" tone="subdued">
               Available with Essential plan.{" "}
-              <a href="/app/billing" style={{ color: "#005bd3" }}>Upgrade now</a>.
+              <Link to="/app/billing" style={{ color: "#005bd3" }}>Upgrade now</Link>.
             </Text>
           )}
           <BlockStack gap="100">
@@ -1463,7 +1463,7 @@ export default function BadgeConfig() {
         {badges.length >= limits.maxBadges && (
           <Banner tone="warning">
             You've reached the {limits.maxBadges} badge limit on the {plan} plan.{" "}
-            <a href="/app/billing">Upgrade for more</a>.
+            <Link to="/app/billing">Upgrade for more</Link>.
           </Banner>
         )}
 
@@ -1608,7 +1608,7 @@ export default function BadgeConfig() {
                 <>
                   <Divider />
                   <Banner tone="info">
-                    <p>Custom badge images available on Starter plan and above. <a href="/app/billing">Upgrade</a></p>
+                    <p>Custom badge images available on Starter plan and above. <Link to="/app/billing">Upgrade</Link></p>
                   </Banner>
                 </>
               )}
