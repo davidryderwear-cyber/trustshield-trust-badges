@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { json } from "@remix-run/node";
-import { useLoaderData, useNavigate } from "@remix-run/react";
+import { useLoaderData, useNavigate, useSubmit } from "@remix-run/react";
 import {
   Page,
   Layout,
@@ -414,6 +414,17 @@ export default function Index() {
                     external
                   >
                     Preview Store
+                  </Button>
+                  <Divider />
+                  <Button
+                    fullWidth
+                    variant="primary"
+                    tone="success"
+                    onClick={() => {
+                      window.open("/api/sync-badges", "_blank");
+                    }}
+                  >
+                    Sync Badges to Store
                   </Button>
                 </BlockStack>
               </Card>

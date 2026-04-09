@@ -1,0 +1,158 @@
+{% comment %}
+  Trust Badges App Embed
+  Auto-renders on product pages without needing to be manually added in theme editor.
+  Reads badge config from shop metafield.
+  Repositions itself after buy buttons on product pages.
+{% endcomment %}
+
+{% liquid
+  assign meta_config = shop.metafields.trust_badges.config.value
+  if meta_config == blank or meta_config.badges == blank or meta_config.badges.size == 0
+    break
+  endif
+  if request.page_type != 'product'
+    if meta_config.showOnHome != true or request.page_type != 'index'
+      break
+    endif
+  endif
+%}
+
+<div
+  id="trust-badges-embed"
+  class="trust-badges-embed"
+  style="
+    max-width: {{ meta_config.maxWidth | default: 600 }}px;
+    margin: {{ meta_config.marginTop | default: 20 }}px auto {{ meta_config.marginBottom | default: 20 }}px;
+    padding: {{ meta_config.paddingTop | default: 16 }}px 12px {{ meta_config.paddingBottom | default: 16 }}px;
+    background-color: {{ meta_config.bgColor | default: '#ffffff' }};
+    border-radius: {{ meta_config.cornerRadius | default: 8 }}px;
+    {% if meta_config.borderSize > 0 %}
+      border: {{ meta_config.borderSize }}px solid {{ meta_config.borderColor | default: '#c5c8d1' }};
+    {% endif %}
+  "
+>
+  {% liquid
+    case meta_config.alignment
+      when 'left'
+        assign justify = 'flex-start'
+      when 'right'
+        assign justify = 'flex-end'
+      else
+        assign justify = 'center'
+    endcase
+  %}
+  <div style="
+    display: flex;
+    flex-direction: {% if meta_config.layout == 'vertical' %}column{% else %}row{% endif %};
+    flex-wrap: wrap;
+    justify-content: {{ justify }};
+    gap: {{ meta_config.spacing | default: 12 }}px;
+    align-items: center;
+  ">
+    {% for badge in meta_config.badges %}
+      <div style="
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        min-width: {{ meta_config.iconSize | default: 32 | plus: 16 }}px;
+        max-width: 110px;
+      ">
+        {% if badge.svg != blank %}
+          <div style="
+            width: {{ meta_config.iconSize | default: 32 }}px;
+            height: {{ meta_config.iconSize | default: 32 }}px;
+            {% if meta_config.iconBgColor != '#ffffff' and meta_config.iconBgColor != blank %}
+              background-color: {{ meta_config.iconBgColor }};
+            {% endif %}
+            border-radius: {{ meta_config.iconCornerRadius | default: 4 }}px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+          ">
+            <div style="
+              width: {{ meta_config.iconSize | default: 32 | minus: 4 }}px;
+              height: {{ meta_config.iconSize | default: 32 | minus: 4 }}px;
+              color: {% if meta_config.useOriginalIconColor %}inherit{% else %}{{ meta_config.iconColor | default: '#333333' }}{% endif %};
+            ">{{ badge.svg }}</div>
+          </div>
+        {% elsif badge.imageUrl != blank %}
+          <img src="{{ badge.imageUrl }}" alt="{{ badge.label }}" style="width: {{ meta_config.iconSize | default: 32 }}px; height: {{ meta_config.iconSize | default: 32 }}px; object-fit: contain;" />
+        {% endif %}
+        <span style="
+          font-size: {{ meta_config.fontSize | default: 14 }}px;
+          font-weight: 600;
+          color: {{ meta_config.textColor | default: '#202223' }};
+          text-align: center;
+          line-height: 1.2;
+        ">{{ badge.label }}</span>
+        {% if badge.subtitle != blank %}
+          <span style="
+            font-size: {{ meta_config.subtitleFontSize | default: 14 }}px;
+            font-weight: 400;
+            color: {{ meta_config.subtitleColor | default: '#96a4b6' }};
+            text-align: center;
+            line-height: 1.3;
+          ">{{ badge.subtitle }}</span>
+        {% endif %}
+      </div>
+    {% endfor %}
+  </div>
+  {% if meta_config.plan == 'free' %}
+    <div style="text-align: center; margin-top: 8px; font-size: 10px; color: #b0b7c3;">
+      Powered by TrustShield
+    </div>
+  {% endif %}
+</div>
+
+{% comment %} Repositioning Script: moves badge container to after buy buttons on product pages {% endcomment %}
+<script>
+(function() {
+  function repositionEmbed() {
+    var container = document.getElementById('trust-badges-embed');
+    if (!container) return;
+
+    // Find buy buttons (Add to cart / Buy it now)
+    var buyButton = document.querySelector('button[name="add"], .shopify-payment-button, [data-testid="Checkout-button"]');
+    if (!buyButton) return;
+
+    // Walk up to find the product info section
+    var productInfo = buyButton.closest('product-info') || buyButton.closest('.product__info-container') || buyButton.closest('.product-form');
+    if (!productInfo) {
+      // Fallback: just insert after the buy button's parent block
+      var buyParent = buyButton.closest('.shopify-block') || buyButton.parentElement?.parentElement;
+      if (buyParent && buyParent.parentElement) {
+        buyParent.after(container);
+        return;
+      }
+    }
+
+    // Find which direct child of productInfo contains buy buttons
+    var children = Array.from(productInfo.children);
+    for (var i = 0; i < children.length; i++) {
+      if (children[i].querySelector('button[name="add"], .shopify-payment-button')) {
+        children[i].after(container);
+        return;
+      }
+    }
+
+    // Last resort: append to productInfo
+    productInfo.appendChild(container);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', repositionEmbed);
+  } else {
+    repositionEmbed();
+  }
+})();
+</script>
+
+{% schema %}
+{
+  "name": "Trust Badges",
+  "target": "body",
+  "settings": []
+}
+{% endschema %}
