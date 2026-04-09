@@ -1,5 +1,5 @@
 import { json } from "@remix-run/node";
-import { useLoaderData, useSubmit, useNavigation } from "@remix-run/react";
+import { useLoaderData, useSubmit, useNavigation, useActionData } from "@remix-run/react";
 import {
   Page,
   Layout,
@@ -84,13 +84,27 @@ export const action = async ({ request }) => {
 
   const appUrl = process.env.SHOPIFY_APP_URL || `https://${shop}/admin/apps`;
 
-  // billing.request() throws a redirect Response to Shopify's charge approval page.
-  // We must NOT catch that — just let it propagate.
-  await billing.request({
-    plan: planName,
-    isTest: true,
-    returnUrl: `${appUrl}/app/billing`,
-  });
+  try {
+    await billing.request({
+      plan: planName,
+      isTest: true,
+      returnUrl: `${appUrl}/app/billing`,
+    });
+  } catch (error) {
+    // billing.request() throws a redirect Response on success — let it through
+    if (error instanceof Response) {
+      throw error;
+    }
+    // Billing API fails if app isn't listed on App Store yet
+    const errorMsg = error?.message || String(error);
+    if (errorMsg.includes("public distribution")) {
+      return json({
+        error: "Billing is not available yet — the app needs to be listed on the Shopify App Store first. For now, all features are unlocked for testing.",
+      });
+    }
+    console.error("Billing request failed:", error);
+    return json({ error: "Billing request failed. Please try again." }, { status: 500 });
+  }
 };
 
 // ---------------------------------------------------------------------------
@@ -181,6 +195,7 @@ const planOrder = ["free", "starter", "essential", "professional"];
 
 export default function Billing() {
   const { currentPlan } = useLoaderData();
+  const actionData = useActionData();
   const submit = useSubmit();
   const navigation = useNavigation();
   const isUpgrading = navigation.state === "submitting";
@@ -200,6 +215,9 @@ export default function Billing() {
       backAction={{ content: "Dashboard", url: "/app" }}
     >
       <BlockStack gap="500">
+        {actionData?.error && (
+          <Banner tone="warning">{actionData.error}</Banner>
+        )}
         <Layout>
           {plans.map((plan) => {
             const planIndex = planOrder.indexOf(plan.key);
