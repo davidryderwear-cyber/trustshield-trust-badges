@@ -26,10 +26,6 @@ api_version = "2025-01"
   customer_deletion_url = "https://trustshield-trust-badges-production.up.railway.app/webhooks"
   shop_deletion_url = "https://trustshield-trust-badges-production.up.railway.app/webhooks"
 
-[app_store]
-privacy_policy_url = "https://trustshield-trust-badges-production.up.railway.app/app/privacy"
-terms_of_service_url = "https://trustshield-trust-badges-production.up.railway.app/app/terms"
-
 [pos]
 embedded = false
 
