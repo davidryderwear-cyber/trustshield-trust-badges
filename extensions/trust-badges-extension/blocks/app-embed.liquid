@@ -141,10 +141,52 @@
     productInfo.appendChild(container);
   }
 
+  // Cart drawer injection: clone badges into cart drawer footer
+  function tryInjectCartBadges() {
+    var container = document.getElementById('trust-badges-embed');
+    if (!container) return false;
+    var drawerFooter = document.querySelector('cart-drawer .drawer__footer') || document.querySelector('.cart-drawer__footer');
+    if (drawerFooter && !drawerFooter.querySelector('.trust-badges-cart-clone')) {
+      var clone = container.cloneNode(true);
+      clone.id = '';
+      clone.classList.add('trust-badges-cart-clone');
+      clone.style.padding = '10px 8px 4px';
+      clone.style.margin = '8px 0 0';
+      clone.style.maxWidth = '100%';
+      drawerFooter.appendChild(clone);
+      return true;
+    }
+    return false;
+  }
+
+  function retryCartInject() {
+    [300, 600, 1000, 1500, 2000].forEach(function(d) { setTimeout(tryInjectCartBadges, d); });
+  }
+
+  // Hook fetch to catch cart updates that re-render the drawer
+  var origFetch = window.fetch;
+  if (origFetch) {
+    window.fetch = function() {
+      var url = typeof arguments[0] === 'string' ? arguments[0] : (arguments[0]?.url || '');
+      var result = origFetch.apply(this, arguments);
+      if (url.indexOf('/cart') !== -1) {
+        result.then(function() { retryCartInject(); });
+      }
+      return result;
+    };
+  }
+
+  // Watch for cart drawer DOM changes
+  var cartDrawer = document.querySelector('cart-drawer');
+  if (cartDrawer) {
+    new MutationObserver(function() { tryInjectCartBadges(); }).observe(cartDrawer, { childList: true, subtree: true });
+  }
+
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', repositionEmbed);
+    document.addEventListener('DOMContentLoaded', function() { repositionEmbed(); tryInjectCartBadges(); });
   } else {
     repositionEmbed();
+    tryInjectCartBadges();
   }
 })();
 </script>
