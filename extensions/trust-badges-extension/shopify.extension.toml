@@ -14,11 +14,20 @@ type = "theme"
   module = "./blocks/trust-badges.liquid"
   target = "block"
 
+  # Declare metafield access so the Liquid block can read badge config
+  [[extensions.metafields]]
+  namespace = "trust_badges"
+  key = "config"
+
+[[extensions]]
+name = "Trust Badges Embed"
+handle = "trust-badges-embed"
+type = "theme"
+
   [[extensions.targeting]]
   module = "./blocks/app-embed.liquid"
   target = "body"
 
-  # Declare metafield access so the Liquid block can read badge config
   [[extensions.metafields]]
   namespace = "trust_badges"
   key = "config"
