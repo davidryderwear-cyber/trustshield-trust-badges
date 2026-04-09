@@ -1485,6 +1485,14 @@ export default function BadgeConfig() {
           </div>
         </div>
 
+        {/* Save button (in-page, not header) */}
+        <InlineStack align="end" gap="200">
+          <Button onClick={() => handleSave("draft")}>Save Draft</Button>
+          <Button variant="primary" onClick={() => handleSave("published")} loading={isSaving}>
+            {isSaving ? "Publishing..." : "Save & Publish"}
+          </Button>
+        </InlineStack>
+
         {/* Add Badge Modal */}
         <Modal
           open={addModalOpen}
