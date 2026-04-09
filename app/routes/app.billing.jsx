@@ -84,36 +84,13 @@ export const action = async ({ request }) => {
 
   const appUrl = process.env.SHOPIFY_APP_URL || `https://${shop}/admin/apps`;
 
-  try {
-    await billing.require({
-      plans: [planName],
-      isTest: true,
-      onFailure: async () => {
-        return billing.request({
-          plan: planName,
-          isTest: true,
-          returnUrl: `${appUrl}/app/billing`,
-        });
-      },
-    });
-
-    // If we get here, the user already has this plan active
-    await prisma.badgeConfig.upsert({
-      where: { shop },
-      update: { plan: planKey },
-      create: { shop, plan: planKey },
-    });
-
-    return json({ success: true });
-  } catch (error) {
-    // billing.request() throws a Response redirect to Shopify's approval page
-    // — let it through instead of catching it as an error
-    if (error instanceof Response) {
-      throw error;
-    }
-    console.error("Billing request failed:", error);
-    return json({ error: "Billing request failed" }, { status: 500 });
-  }
+  // billing.request() throws a redirect Response to Shopify's charge approval page.
+  // We must NOT catch that — just let it propagate.
+  await billing.request({
+    plan: planName,
+    isTest: true,
+    returnUrl: `${appUrl}/app/billing`,
+  });
 };
 
 // ---------------------------------------------------------------------------
