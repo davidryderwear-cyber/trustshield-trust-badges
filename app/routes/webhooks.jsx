@@ -1,8 +1,22 @@
 import { authenticate } from "../shopify.server";
 import prisma from "../db.server";
 
+const HANDLED_TOPICS = new Set([
+  "APP_UNINSTALLED",
+  "APP_SUBSCRIPTIONS_UPDATE",
+  "CUSTOMERS_DATA_REQUEST",
+  "CUSTOMERS_REDACT",
+  "SHOP_REDACT",
+]);
+
 export const action = async ({ request }) => {
   const { topic, shop, payload } = await authenticate.webhook(request);
+
+  // Surface unhandled topics so they show up in logs and monitoring
+  if (!HANDLED_TOPICS.has(topic)) {
+    console.warn(`Unhandled webhook topic "${topic}" for ${shop}`);
+    return new Response("Unhandled webhook topic", { status: 404 });
+  }
 
   try {
     switch (topic) {
@@ -22,20 +36,18 @@ export const action = async ({ request }) => {
         }
         break;
       case "CUSTOMERS_DATA_REQUEST":
-        // App does not store customer data
+        // App does not store customer data — compliance-only ack
         break;
       case "CUSTOMERS_REDACT":
-        // App does not store customer data
+        // App does not store customer data — compliance-only ack
         break;
       case "SHOP_REDACT":
         await prisma.badgeConfig.deleteMany({ where: { shop } });
         break;
-      default:
-        throw new Response("Unhandled webhook topic", { status: 404 });
     }
   } catch (error) {
     console.error(`Webhook ${topic} failed for ${shop}:`, error);
-    // Return 200 to prevent Shopify retry storms
+    // Return 200 to prevent Shopify retry storms for transient DB errors
   }
 
   return new Response(null, { status: 200 });

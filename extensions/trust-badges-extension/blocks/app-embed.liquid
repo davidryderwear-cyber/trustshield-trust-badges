@@ -78,7 +78,7 @@
             ">{{ badge.svg }}</div>
           </div>
         {% elsif badge.imageUrl != blank %}
-          <img src="{{ badge.imageUrl }}" alt="{{ badge.label }}" style="width: {{ meta_config.iconSize | default: 32 }}px; height: {{ meta_config.iconSize | default: 32 }}px; object-fit: contain;" />
+          <img src="{{ badge.imageUrl | escape }}" alt="{{ badge.label | escape }}" style="width: {{ meta_config.iconSize | default: 32 }}px; height: {{ meta_config.iconSize | default: 32 }}px; object-fit: contain;" />
         {% endif %}
         <span style="
           font-size: {{ meta_config.fontSize | default: 14 }}px;
@@ -86,7 +86,7 @@
           color: {{ meta_config.textColor | default: '#202223' }};
           text-align: center;
           line-height: 1.2;
-        ">{{ badge.label }}</span>
+        ">{{ badge.label | escape }}</span>
         {% if badge.subtitle != blank %}
           <span style="
             font-size: {{ meta_config.subtitleFontSize | default: 14 }}px;
@@ -94,7 +94,7 @@
             color: {{ meta_config.subtitleColor | default: '#96a4b6' }};
             text-align: center;
             line-height: 1.3;
-          ">{{ badge.subtitle }}</span>
+          ">{{ badge.subtitle | escape }}</span>
         {% endif %}
       </div>
     {% endfor %}

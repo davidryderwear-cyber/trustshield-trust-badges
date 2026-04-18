@@ -72,6 +72,10 @@ model BadgeConfig {
   // Content tab — icon block extras
   titleAboveIcons   String  @default("")
   titleGap          Int     @default(12)
+  // Layout tab — responsive columns + typography
+  iconsPerRowDesktop Int    @default(5)
+  iconsPerRowMobile  Int    @default(3)
+  font              String  @default("inherit")
   // Badge metadata
   badgeName         String  @default("My Trust Badges")
   badgeType         String  @default("icon_block")

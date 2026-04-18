@@ -31,7 +31,7 @@ export const loader = async ({ request }) => {
   try {
     const billingCheck = await billing.check({
       plans: PAID_PLANS,
-      isTest: true,
+      isTest: process.env.NODE_ENV !== "production",
     });
     hasActiveSubscription = billingCheck.hasActivePayment;
     activePlanName = billingCheck.appSubscriptions?.[0]?.name;
@@ -87,7 +87,7 @@ export const action = async ({ request }) => {
   try {
     await billing.request({
       plan: planName,
-      isTest: true,
+      isTest: process.env.NODE_ENV !== "production",
       returnUrl: `${appUrl}/app/billing`,
     });
   } catch (error) {

@@ -147,6 +147,9 @@ export const action = async ({ request }) => {
       // New fields
       titleAboveIcons: String(data.titleAboveIcons || "").slice(0, 200),
       titleGap: clamp(data.titleGap, 0, 40, 12),
+      iconsPerRowDesktop: clamp(data.iconsPerRowDesktop, 1, 10, 5),
+      iconsPerRowMobile: clamp(data.iconsPerRowMobile, 1, 5, 3),
+      font: String(data.font || "inherit").slice(0, 100),
     };
 
     await prisma.badgeConfig.upsert({
@@ -329,6 +332,9 @@ export default function BadgeConfig() {
       endsAt: endsOption === "never" ? null : endsAt,
       titleAboveIcons,
       titleGap: clamp(titleGap, 0, 40, 12),
+      iconsPerRowDesktop: clamp(iconsPerRowDesktop, 1, 10, 5),
+      iconsPerRowMobile: clamp(iconsPerRowMobile, 1, 5, 3),
+      font,
     };
     const formData = new FormData();
     formData.set("intent", "save");
@@ -343,6 +349,7 @@ export default function BadgeConfig() {
     subtitleFontSize, subtitleColor, targetType, submit,
     badgeStatus, badgeName, badgeType, startsAt, endsAt, startsOption, endsOption,
     titleAboveIcons, titleGap,
+    iconsPerRowDesktop, iconsPerRowMobile, font,
   ]);
 
   const addBadge = useCallback((iconKey) => {

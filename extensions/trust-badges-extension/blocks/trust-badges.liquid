@@ -84,7 +84,7 @@
             flex-shrink: 0;
           ">
             {% if badge.type == 'custom' and badge.imageUrl != blank %}
-              <img src="{{ badge.imageUrl }}" alt="{{ badge.label }}" width="{{ meta_config.iconSize | minus: 4 }}" height="{{ meta_config.iconSize | minus: 4 }}" style="width:{{ meta_config.iconSize | minus: 4 }}px;height:{{ meta_config.iconSize | minus: 4 }}px;object-fit:contain;" loading="lazy">
+              <img src="{{ badge.imageUrl | escape }}" alt="{{ badge.label | escape }}" width="{{ meta_config.iconSize | minus: 4 }}" height="{{ meta_config.iconSize | minus: 4 }}" style="width:{{ meta_config.iconSize | minus: 4 }}px;height:{{ meta_config.iconSize | minus: 4 }}px;object-fit:contain;" loading="lazy">
             {% else %}
               {{ badge.svg }}
             {% endif %}
@@ -97,7 +97,7 @@
             font-weight: 600;
             word-break: break-word;
           ">
-            {{ badge.label }}
+            {{ badge.label | escape }}
           </span>
           {% if badge.subtitle != blank %}
             <span class="trust-badge-subtitle" style="
@@ -109,7 +109,7 @@
               margin-top: -2px;
               word-break: break-word;
             ">
-              {{ badge.subtitle }}
+              {{ badge.subtitle | escape }}
             </span>
           {% endif %}
         </div>
