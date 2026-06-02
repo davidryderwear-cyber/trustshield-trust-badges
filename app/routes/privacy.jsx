@@ -1,0 +1,73 @@
+// Public Privacy Policy — NO authentication, reachable by anyone (App Store
+// requires a publicly accessible policy URL). Served as standalone HTML so it
+// renders outside the embedded admin / App Bridge context.
+const HTML = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Privacy Policy - TrustShield Trust Badges</title>
+<style>
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 800px; margin: 0 auto; padding: 40px 20px; line-height: 1.6; color: #333; }
+h1 { color: #1a1a1a; border-bottom: 2px solid #2d7ff9; padding-bottom: 10px; }
+h2 { color: #1a1a1a; margin-top: 30px; }
+p, li { margin: 10px 0; }
+a { color: #2d7ff9; }
+</style>
+</head>
+<body>
+<h1>Privacy Policy for TrustShield Trust Badges</h1>
+<p><strong>Last updated: June 2, 2026</strong></p>
+
+<h2>Introduction</h2>
+<p>TrustShield Trust Badges ("we", "our", or "us") operates as a Shopify application. This Privacy Policy explains how we collect, use, and protect information when you use our app.</p>
+
+<h2>Information We Collect</h2>
+<p>When you install TrustShield Trust Badges, we access the following information through Shopify's authentication system:</p>
+<ul>
+<li><strong>Store information:</strong> Your store name and domain, used to identify your account and display badges on your storefront.</li>
+<li><strong>Email address:</strong> Your Shopify account email, used for account identification and support communication.</li>
+<li><strong>Badge configuration:</strong> The badge settings, custom badge image URLs, and billing plan associated with your store.</li>
+</ul>
+<p>We do not collect any personal information from your customers. TrustShield Trust Badges only displays visual badge elements on your storefront and does not track, collect, or store any customer data. If you enable A/B testing, an anonymous identifier is stored in the visitor's browser solely to keep the displayed badge variant consistent during their visit; it contains no personal information and is used only to measure aggregate badge performance.</p>
+
+<h2>How We Use Your Information</h2>
+<p>We use the information we collect to:</p>
+<ul>
+<li>Provide and maintain the TrustShield Trust Badges service</li>
+<li>Store your badge configuration preferences</li>
+<li>Communicate with you about your account or support requests</li>
+</ul>
+
+<h2>Data Storage</h2>
+<p>Your badge configuration data is stored securely on our servers. We use industry-standard security measures to protect your information.</p>
+
+<h2>Third-Party Services</h2>
+<p>We do not share your information with third parties. Our app operates entirely within the Shopify ecosystem.</p>
+
+<h2>Data Retention</h2>
+<p>We retain your badge configuration data for as long as you have the app installed. When you uninstall the app, all data associated with your store is deleted.</p>
+
+<h2>Your Rights</h2>
+<p>You have the right to:</p>
+<ul>
+<li>Access the personal information we hold about you</li>
+<li>Request deletion of your data by uninstalling the app</li>
+<li>Contact us with any privacy-related questions</li>
+</ul>
+
+<h2>Changes to This Policy</h2>
+<p>We may update this Privacy Policy from time to time. Changes will be posted on this page with an updated date.</p>
+
+<h2>Contact Us</h2>
+<p>If you have questions about this Privacy Policy, please contact us at: <a href="mailto:privacy@makaveli.digital">privacy@makaveli.digital</a></p>
+</body>
+</html>`;
+
+export const loader = () =>
+  new Response(HTML, {
+    headers: {
+      "Content-Type": "text/html; charset=utf-8",
+      "Cache-Control": "public, max-age=3600",
+    },
+  });
