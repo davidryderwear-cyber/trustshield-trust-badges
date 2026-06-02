@@ -79,7 +79,7 @@
             ">{{ badge.svg }}</div>
           </div>
         {% elsif badge.imageUrl != blank %}
-          <img src="{{ badge.imageUrl | escape }}" alt="{{ badge.label | escape }}" style="width: {{ meta_config.iconSize | default: 32 }}px; height: {{ meta_config.iconSize | default: 32 }}px; object-fit: contain;" />
+          <img src="{{ badge.imageUrl | escape }}" alt="{{ badge.label | escape }}" width="{{ meta_config.iconSize | default: 32 }}" height="{{ meta_config.iconSize | default: 32 }}" style="width: {{ meta_config.iconSize | default: 32 }}px; height: {{ meta_config.iconSize | default: 32 }}px; object-fit: contain;" loading="lazy" />
         {% endif %}
         <span style="
           font-size: {{ meta_config.fontSize | default: 14 }}px;
