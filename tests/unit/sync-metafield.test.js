@@ -135,4 +135,10 @@ describe("buildConfigPayload", () => {
     expect(payload.badges).toHaveLength(1);
     expect(payload.badges[0].label).toBe("Test");
   });
+
+  it("includes an appUrl string so the storefront can reach the tracking endpoint", () => {
+    const payload = buildConfigPayload({});
+    expect(payload).toHaveProperty("appUrl");
+    expect(typeof payload.appUrl).toBe("string");
+  });
 });

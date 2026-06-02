@@ -44,7 +44,7 @@ export const action = async ({ request }) => {
   // Check plan limits
   const existingConfig = await prisma.badgeConfig.findUnique({ where: { shop } });
   const plan = existingConfig?.plan || "free";
-  const limits = PLAN_LIMITS[plan];
+  const limits = PLAN_LIMITS[plan] || PLAN_LIMITS.free;
   if (template.badges.length > limits.maxBadges) {
     return json({ error: `Template has ${template.badges.length} badges but your ${plan} plan allows ${limits.maxBadges}` }, { status: 403 });
   }

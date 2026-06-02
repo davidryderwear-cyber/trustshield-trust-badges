@@ -57,6 +57,8 @@ export function buildConfigPayload(config) {
     showOnCart: config.showOnCart ?? false,
     showOnHome: config.showOnHome ?? false,
     plan: config.plan || "free",
+    // App origin so the storefront can reach the A/B tracking endpoint directly
+    appUrl: process.env.SHOPIFY_APP_URL || "",
     // Design — card
     bgColor: config.bgColor || "#ffffff",
     cornerRadius: config.cornerRadius ?? 8,

@@ -20,6 +20,7 @@ export default function Privacy() {
               </Text>
               <BlockStack gap="100">
                 <Text as="p" variant="bodyMd">• Your Shopify store domain (to associate your badge configuration)</Text>
+                <Text as="p" variant="bodyMd">• Your Shopify account email (for account identification and support)</Text>
                 <Text as="p" variant="bodyMd">• Badge configuration settings (layout, colors, icon selections)</Text>
                 <Text as="p" variant="bodyMd">• Custom badge image URLs (if you upload custom badges)</Text>
                 <Text as="p" variant="bodyMd">• Billing plan status</Text>
@@ -30,7 +31,7 @@ export default function Privacy() {
                 <Text as="p" variant="bodyMd">• We do NOT collect any customer data from your store</Text>
                 <Text as="p" variant="bodyMd">• We do NOT collect any order information</Text>
                 <Text as="p" variant="bodyMd">• We do NOT collect any personal information from your store visitors</Text>
-                <Text as="p" variant="bodyMd">• We do NOT use cookies or tracking on your storefront</Text>
+                <Text as="p" variant="bodyMd">• We do NOT use tracking cookies or collect personal data on your storefront. If you enable A/B testing, an anonymous identifier is kept in the visitor's browser only to show a consistent badge variant — it contains no personal information.</Text>
               </BlockStack>
 
               <Text as="h3" variant="headingSm">How we use your data</Text>

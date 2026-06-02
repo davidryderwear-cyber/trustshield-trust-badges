@@ -10,7 +10,6 @@ import {
   Button,
   TextField,
   Select,
-  RangeSlider,
   Banner,
   Divider,
   Modal,
@@ -23,6 +22,15 @@ import { authenticate } from "../shopify.server";
 import prisma from "../db.server";
 import { BADGE_ICONS, PLAN_LIMITS, BADGE_CATEGORIES, BADGE_TEMPLATES } from "../utils/badge-presets";
 import { syncMetafield, clearMetafield } from "../utils/sync-metafield";
+
+// Only allow https:// image URLs for custom badges (blocks javascript:/data: and other schemes)
+function isHttpsUrl(value) {
+  try {
+    return new URL(String(value)).protocol === "https:";
+  } catch {
+    return false;
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Loader
@@ -86,6 +94,9 @@ export const action = async ({ request }) => {
       if (typeof badge.label !== "string" || badge.label.length > 100) {
         return json({ error: "Badge labels must be under 100 characters" }, { status: 400 });
       }
+      if (badge.type === "custom" && badge.imageUrl && !isHttpsUrl(badge.imageUrl)) {
+        return json({ error: "Custom badge images must use an https:// URL" }, { status: 400 });
+      }
     }
 
     const existingConfig = await prisma.badgeConfig.findUnique({ where: { shop } });
@@ -142,6 +153,7 @@ export const action = async ({ request }) => {
       status,
       badgeName: String(data.badgeName || "Untitled Badge Set").slice(0, 200),
       badgeType: ["single_banner", "icon_block", "minimal_icons", "compact_grid"].includes(data.badgeType) ? data.badgeType : "icon_block",
+      pageType: ["product", "cart"].includes(data.pageType) ? data.pageType : "product",
       startsAt: data.startsAt || null,
       endsAt: data.endsAt || null,
       // New fields
@@ -160,11 +172,13 @@ export const action = async ({ request }) => {
 
     const updatedConfig = await prisma.badgeConfig.findUnique({ where: { shop } });
 
+    let syncError = null;
     if (status === "published") {
       try {
         await syncMetafield(admin, updatedConfig);
       } catch (error) {
         console.error("Metafield sync failed:", error);
+        syncError = "Saved, but publishing to your storefront failed. Please try syncing again.";
       }
     } else {
       try {
@@ -174,7 +188,7 @@ export const action = async ({ request }) => {
       }
     }
 
-    return json({ success: true });
+    return json({ success: true, status, syncError });
   }
 
   if (intent === "upload_image") {
@@ -183,8 +197,11 @@ export const action = async ({ request }) => {
     if (!imageUrl || !imageName) {
       return json({ error: "Image URL and name required" }, { status: 400 });
     }
+    if (!isHttpsUrl(imageUrl)) {
+      return json({ error: "Image URL must be a valid https:// link" }, { status: 400 });
+    }
     const customBadge = await prisma.customBadge.create({
-      data: { shop, name: imageName, imageUrl },
+      data: { shop, name: String(imageName).slice(0, 200), imageUrl },
     });
     return json({ success: true, customBadge });
   }
@@ -252,6 +269,7 @@ export default function BadgeConfig() {
   const [uploadUrl, setUploadUrl] = useState("");
   const [uploadName, setUploadName] = useState("");
   const [badgeType, setBadgeType] = useState(initialBadgeType);
+  const [pageType] = useState(searchParams.get("pageType") || config.pageType || "product");
   const [badgeName, setBadgeName] = useState(isNewConfig ? "Your badge" : (config.badgeName || "Your badge"));
   const [badgeStatus, setBadgeStatus] = useState(config.status || "draft");
   const [startsAt, setStartsAt] = useState(config.startsAt || null);
@@ -328,6 +346,7 @@ export default function BadgeConfig() {
       status: resolvedStatus,
       badgeName,
       badgeType,
+      pageType,
       startsAt: startsOption === "now" ? null : startsAt,
       endsAt: endsOption === "never" ? null : endsAt,
       titleAboveIcons,
@@ -347,7 +366,7 @@ export default function BadgeConfig() {
     paddingTop, paddingBottom, marginTop, marginBottom,
     iconBgColor, iconCornerRadius, useOriginalIconColor,
     subtitleFontSize, subtitleColor, targetType, submit,
-    badgeStatus, badgeName, badgeType, startsAt, endsAt, startsOption, endsOption,
+    badgeStatus, badgeName, badgeType, pageType, startsAt, endsAt, startsOption, endsOption,
     titleAboveIcons, titleGap,
     iconsPerRowDesktop, iconsPerRowMobile, font,
   ]);
@@ -810,20 +829,6 @@ export default function BadgeConfig() {
 
           <Divider />
 
-          {/* Translations */}
-          <BlockStack gap="200">
-            <Text as="h2" variant="headingMd">Translations</Text>
-            <Button disabled={!limits.scheduling} onClick={() => {}}>Add translation</Button>
-            {!limits.scheduling && (
-              <Text as="p" variant="bodySm" tone="subdued">
-                Available with Essential plan.{" "}
-                <Link to="/app/billing" style={{ color: "#005bd3" }}>Upgrade now</Link>.
-              </Text>
-            )}
-          </BlockStack>
-
-          <Divider />
-
           {/* Scheduling */}
           <BlockStack gap="300">
             <Text as="h2" variant="headingMd">Scheduling</Text>
@@ -1026,14 +1031,7 @@ export default function BadgeConfig() {
               </InlineGrid>
             </BlockStack>
             <BlockStack gap="100">
-              <Text as="p" variant="bodyMd" fontWeight="semibold">Icon title size and color</Text>
-              <InlineGrid columns={2} gap="300">
-                <PxInput label="" value={fontSize} onChange={setFontSize} min={10} max={28} />
-                <ColorField label="Icon title color" labelHidden value={textColor} onChange={setTextColor} />
-              </InlineGrid>
-            </BlockStack>
-            <BlockStack gap="100">
-              <Text as="p" variant="bodyMd" fontWeight="semibold">Icon subheading size and color</Text>
+              <Text as="p" variant="bodyMd" fontWeight="semibold">Subheading size and color</Text>
               <InlineGrid columns={2} gap="300">
                 <PxInput label="" value={subtitleFontSize} onChange={setSubtitleFontSize} min={8} max={22} />
                 <ColorField label="Icon subheading color" labelHidden value={subtitleColor} onChange={setSubtitleColor} />
@@ -1447,22 +1445,18 @@ export default function BadgeConfig() {
         onAction: () => handleSave("published"),
         loading: isSaving,
       }}
-      secondaryActions={[
-        {
-          content: "Duplicate",
-          onAction: () => {},
-        },
-        {
-          content: "Delete",
-          onAction: () => {},
-          destructive: true,
-        },
-      ]}
       backAction={{ content: "Your badges", url: "/app" }}
     >
       <BlockStack gap="400">
-        {saved && (
-          <Banner title="Settings saved and synced to storefront!" tone="success" onDismiss={() => setSaved(false)} />
+        {saved && actionData?.syncError && (
+          <Banner title={actionData.syncError} tone="warning" onDismiss={() => setSaved(false)} />
+        )}
+        {saved && !actionData?.syncError && (
+          <Banner
+            title={actionData?.status === "published" ? "Saved and published to your storefront!" : "Saved as draft."}
+            tone="success"
+            onDismiss={() => setSaved(false)}
+          />
         )}
         {actionData?.error && (
           <Banner title={actionData.error} tone="critical" />

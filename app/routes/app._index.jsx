@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { json } from "@remix-run/node";
-import { useLoaderData, useNavigate, useSubmit } from "@remix-run/react";
+import { useLoaderData, useNavigate, useFetcher } from "@remix-run/react";
 import {
   Page,
   Layout,
@@ -13,9 +13,7 @@ import {
   Divider,
   Badge,
   ProgressBar,
-  Icon,
   Box,
-  Link,
   Collapsible,
 } from "@shopify/polaris";
 import { authenticate } from "../shopify.server";
@@ -45,7 +43,7 @@ export const loader = async ({ request }) => {
     icon_block: "Icon Block",
     single_banner: "Single Banner",
     minimal_icons: "Minimal Icons",
-    payment_icons: "Payment Icons",
+    compact_grid: "Payment Icons",
   };
 
   const pageTypeLabels = {
@@ -173,6 +171,8 @@ export default function Index() {
     badgeBlock,
   } = useLoaderData();
   const navigate = useNavigate();
+  const syncFetcher = useFetcher();
+  const syncing = syncFetcher.state !== "idle";
 
   const [guideOpen, setGuideOpen] = useState(true);
   const [embedConfirmed, setEmbedConfirmed] = useState(false);
@@ -420,12 +420,25 @@ export default function Index() {
                     fullWidth
                     variant="primary"
                     tone="success"
-                    onClick={() => {
-                      window.open("/api/sync-badges", "_blank");
-                    }}
+                    loading={syncing}
+                    onClick={() =>
+                      syncFetcher.submit(
+                        {},
+                        { method: "post", action: "/api/sync-badges" }
+                      )
+                    }
                   >
-                    Sync Badges to Store
+                    {syncing ? "Syncing..." : "Sync Badges to Store"}
                   </Button>
+                  {syncFetcher.data && !syncing && (
+                    <Banner
+                      tone={syncFetcher.data.success ? "success" : "critical"}
+                    >
+                      {syncFetcher.data.success
+                        ? syncFetcher.data.message
+                        : syncFetcher.data.error}
+                    </Banner>
+                  )}
                 </BlockStack>
               </Card>
 

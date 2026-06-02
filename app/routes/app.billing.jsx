@@ -11,7 +11,6 @@ import {
   Badge,
   Divider,
   Box,
-  ProgressBar,
   Banner,
 } from "@shopify/polaris";
 import { authenticate, PLANS } from "../shopify.server";
@@ -52,9 +51,10 @@ export const loader = async ({ request }) => {
         currentPlan = newPlan;
       }
     } else if (!hasActiveSubscription && currentPlan !== "free") {
-      await prisma.badgeConfig.update({
+      await prisma.badgeConfig.upsert({
         where: { shop },
-        data: { plan: "free" },
+        update: { plan: "free" },
+        create: { shop, plan: "free" },
       });
       currentPlan = "free";
     }
@@ -166,7 +166,6 @@ const plans = [
       "Cart page / cart drawer badges",
       "Product tag targeting",
       "Geolocation targeting",
-      "Translations support",
       "A/B testing",
       "Priority support",
     ],

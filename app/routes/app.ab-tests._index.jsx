@@ -23,7 +23,7 @@ export const loader = async ({ request }) => {
 
   const config = await prisma.badgeConfig.findUnique({ where: { shop } });
   const plan = config?.plan || "free";
-  const limits = PLAN_LIMITS[plan];
+  const limits = PLAN_LIMITS[plan] || PLAN_LIMITS.free;
 
   if (!limits.abTesting) {
     return json({ plan, tests: [], gated: true });

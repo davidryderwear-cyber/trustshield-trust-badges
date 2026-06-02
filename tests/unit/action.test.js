@@ -1,3 +1,4 @@
+/* eslint-disable no-script-url -- tests intentionally use a javascript: URL to assert it is rejected */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { authenticate } from "../../app/shopify.server";
 import prisma from "../../app/db.server";
@@ -198,6 +199,35 @@ describe("action — save intent", () => {
     const result = await response.json();
     expect(result.success).toBe(true);
   });
+
+  it("rejects a custom badge with a javascript: imageUrl", async () => {
+    const data = validSaveData({
+      badges: [{ id: "1", type: "custom", label: "Bad", imageUrl: "javascript:alert(1)", enabled: true }],
+    });
+    const request = buildRequest({ intent: "save", data });
+    const response = await action({ request });
+    expect(response.status).toBe(400);
+    const result = await response.json();
+    expect(result.error).toContain("https://");
+  });
+
+  it("rejects a custom badge with an insecure http imageUrl", async () => {
+    const data = validSaveData({
+      badges: [{ id: "1", type: "custom", label: "Insecure", imageUrl: "http://img.com/x.png", enabled: true }],
+    });
+    const request = buildRequest({ intent: "save", data });
+    const response = await action({ request });
+    expect(response.status).toBe(400);
+  });
+
+  it("returns status and a null syncError on a draft save", async () => {
+    const request = buildRequest({ intent: "save", data: validSaveData({ status: "draft" }) });
+    const response = await action({ request });
+    const result = await response.json();
+    expect(result.success).toBe(true);
+    expect(result.status).toBe("draft");
+    expect(result.syncError).toBeNull();
+  });
 });
 
 describe("action — upload_image intent", () => {
@@ -227,6 +257,16 @@ describe("action — upload_image intent", () => {
 
   it("returns 400 when imageUrl is missing", async () => {
     const request = buildRequest({ intent: "upload_image", imageName: "Logo" });
+    const response = await action({ request });
+    expect(response.status).toBe(400);
+  });
+
+  it("returns 400 when imageUrl is not an https URL", async () => {
+    const request = buildRequest({
+      intent: "upload_image",
+      imageUrl: "javascript:alert(1)",
+      imageName: "Evil",
+    });
     const response = await action({ request });
     expect(response.status).toBe(400);
   });

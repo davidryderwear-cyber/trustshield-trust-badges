@@ -29,7 +29,7 @@ export const loader = async ({ request }) => {
   if (!config) return redirect("/app/badges");
 
   const plan = config.plan || "free";
-  if (!PLAN_LIMITS[plan].abTesting) return redirect("/app/ab-tests");
+  if (!(PLAN_LIMITS[plan] || PLAN_LIMITS.free).abTesting) return redirect("/app/ab-tests");
 
   let badges;
   try { badges = JSON.parse(config.badges); } catch { badges = []; }

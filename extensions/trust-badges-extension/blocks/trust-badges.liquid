@@ -15,16 +15,16 @@
 <div
   id="trust-badges-{{ block.id }}"
   class="trust-badges-container"
-  data-app-url="{{ shop.url }}/apps/trust-badges"
+  data-app-url="{{ meta_config.appUrl | default: shop.url | escape }}"
   style="
     max-width: {% if use_metafield %}{{ meta_config.maxWidth }}{% else %}{{ block.settings.max_width }}{% endif %}px;
     margin: {% if use_metafield %}{{ meta_config.marginTop | default: 20 }}px auto {{ meta_config.marginBottom | default: 20 }}px{% else %}{{ block.settings.vertical_margin }}px auto{% endif %};
     padding: {% if use_metafield %}{{ meta_config.paddingTop | default: 16 }}px 12px {{ meta_config.paddingBottom | default: 16 }}px{% else %}{{ block.settings.padding }}px{% endif %};
     {% if use_metafield %}
-      background-color: {{ meta_config.bgColor | default: '#ffffff' }};
+      background-color: {{ meta_config.bgColor | default: '#ffffff' | escape }};
       border-radius: {{ meta_config.cornerRadius | default: 8 }}px;
       {% if meta_config.borderSize > 0 %}
-        border: {{ meta_config.borderSize }}px solid {{ meta_config.borderColor | default: '#c5c8d1' }};
+        border: {{ meta_config.borderSize }}px solid {{ meta_config.borderColor | default: '#c5c8d1' | escape }};
       {% endif %}
     {% endif %}
   "
@@ -73,9 +73,9 @@
           <div class="trust-badge-icon" style="
             width: {{ meta_config.iconSize }}px;
             height: {{ meta_config.iconSize }}px;
-            {% unless use_original_color %}color: {{ meta_config.iconColor }};{% endunless %}
+            {% unless use_original_color %}color: {{ meta_config.iconColor | escape }};{% endunless %}
             {% if icon_has_bg %}
-              background-color: {{ icon_bg }};
+              background-color: {{ icon_bg | escape }};
               border-radius: {{ meta_config.iconCornerRadius | default: 4 }}px;
             {% endif %}
             display: flex;
@@ -91,7 +91,7 @@
           </div>
           <span class="trust-badge-label" style="
             font-size: {{ meta_config.fontSize }}px;
-            color: {{ meta_config.textColor }};
+            color: {{ meta_config.textColor | escape }};
             text-align: center;
             line-height: 1.2;
             font-weight: 600;
@@ -102,7 +102,7 @@
           {% if badge.subtitle != blank %}
             <span class="trust-badge-subtitle" style="
               font-size: {{ meta_config.subtitleFontSize | default: 14 }}px;
-              color: {{ meta_config.subtitleColor | default: '#96a4b6' }};
+              color: {{ meta_config.subtitleColor | default: '#96a4b6' | escape }};
               text-align: center;
               line-height: 1.3;
               font-weight: 400;

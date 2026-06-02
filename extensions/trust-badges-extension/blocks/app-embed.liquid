@@ -20,14 +20,15 @@
 <div
   id="trust-badges-embed"
   class="trust-badges-embed"
+  data-app-url="{{ meta_config.appUrl | escape }}"
   style="
     max-width: {{ meta_config.maxWidth | default: 600 }}px;
     margin: {{ meta_config.marginTop | default: 20 }}px auto {{ meta_config.marginBottom | default: 20 }}px;
     padding: {{ meta_config.paddingTop | default: 16 }}px 12px {{ meta_config.paddingBottom | default: 16 }}px;
-    background-color: {{ meta_config.bgColor | default: '#ffffff' }};
+    background-color: {{ meta_config.bgColor | default: '#ffffff' | escape }};
     border-radius: {{ meta_config.cornerRadius | default: 8 }}px;
     {% if meta_config.borderSize > 0 %}
-      border: {{ meta_config.borderSize }}px solid {{ meta_config.borderColor | default: '#c5c8d1' }};
+      border: {{ meta_config.borderSize }}px solid {{ meta_config.borderColor | default: '#c5c8d1' | escape }};
     {% endif %}
   "
 >
@@ -41,7 +42,7 @@
         assign justify = 'center'
     endcase
   %}
-  <div style="
+  <div class="trust-badges-embed-wrapper" style="
     display: flex;
     flex-direction: {% if meta_config.layout == 'vertical' %}column{% else %}row{% endif %};
     flex-wrap: wrap;
@@ -63,7 +64,7 @@
             width: {{ meta_config.iconSize | default: 32 }}px;
             height: {{ meta_config.iconSize | default: 32 }}px;
             {% if meta_config.iconBgColor != '#ffffff' and meta_config.iconBgColor != blank %}
-              background-color: {{ meta_config.iconBgColor }};
+              background-color: {{ meta_config.iconBgColor | escape }};
             {% endif %}
             border-radius: {{ meta_config.iconCornerRadius | default: 4 }}px;
             display: flex;
@@ -74,7 +75,7 @@
             <div style="
               width: {{ meta_config.iconSize | default: 32 | minus: 4 }}px;
               height: {{ meta_config.iconSize | default: 32 | minus: 4 }}px;
-              color: {% if meta_config.useOriginalIconColor %}inherit{% else %}{{ meta_config.iconColor | default: '#333333' }}{% endif %};
+              color: {% if meta_config.useOriginalIconColor %}inherit{% else %}{{ meta_config.iconColor | default: '#333333' | escape }}{% endif %};
             ">{{ badge.svg }}</div>
           </div>
         {% elsif badge.imageUrl != blank %}
@@ -83,7 +84,7 @@
         <span style="
           font-size: {{ meta_config.fontSize | default: 14 }}px;
           font-weight: 600;
-          color: {{ meta_config.textColor | default: '#202223' }};
+          color: {{ meta_config.textColor | default: '#202223' | escape }};
           text-align: center;
           line-height: 1.2;
         ">{{ badge.label | escape }}</span>
@@ -91,7 +92,7 @@
           <span style="
             font-size: {{ meta_config.subtitleFontSize | default: 14 }}px;
             font-weight: 400;
-            color: {{ meta_config.subtitleColor | default: '#96a4b6' }};
+            color: {{ meta_config.subtitleColor | default: '#96a4b6' | escape }};
             text-align: center;
             line-height: 1.3;
           ">{{ badge.subtitle | escape }}</span>
@@ -190,6 +191,132 @@
   }
 })();
 </script>
+
+{% comment %} A/B Testing: assign variant, swap badges, track impression + conversion {% endcomment %}
+{% if meta_config.abTest %}
+<script>
+(function() {
+  try {
+    var container = document.getElementById('trust-badges-embed');
+    if (!container) return;
+
+    var abTest = {{ meta_config.abTest | json }};
+    if (!abTest || typeof abTest !== 'object' || !abTest.testId) return;
+
+    var appUrl = {{ meta_config.appUrl | json }};
+    if (!appUrl) return;
+
+    // Assign a sticky variant for this visitor
+    var storageKey = 'tb_ab_' + abTest.testId;
+    var variant = localStorage.getItem(storageKey);
+    if (variant !== 'control' && variant !== 'variant') {
+      variant = (Math.random() * 100 < (abTest.split || 50)) ? 'variant' : 'control';
+      try { localStorage.setItem(storageKey, variant); } catch(e) {}
+    }
+
+    // Session id for server-side dedup
+    var sid = sessionStorage.getItem('tb_sid');
+    if (!sid) {
+      if (window.crypto && window.crypto.getRandomValues) {
+        var arr = new Uint8Array(12);
+        window.crypto.getRandomValues(arr);
+        sid = Array.from(arr, function(b) { return b.toString(16).padStart(2,'0'); }).join('');
+      } else {
+        sid = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 8);
+      }
+      try { sessionStorage.setItem('tb_sid', sid); } catch(e) {}
+    }
+
+    var enc = encodeURIComponent;
+    function track(eventType) {
+      new Image().src = appUrl + '/api/ab-track?testId=' + enc(abTest.testId) +
+        '&variant=' + enc(variant) + '&event=' + enc(eventType) + '&sid=' + enc(sid);
+    }
+
+    // Track impression
+    track('impression');
+
+    // If assigned to variant, rebuild the badges via DOM (safe for SVGs)
+    if (variant === 'variant' && abTest.variant && abTest.variant.badges && abTest.variant.badges.length > 0) {
+      var wrapper = container.querySelector('.trust-badges-embed-wrapper');
+      if (wrapper) {
+        var vBadges = abTest.variant.badges;
+        var v = abTest.variant;
+        var sz = v.iconSize || 32;
+        while (wrapper.firstChild) wrapper.removeChild(wrapper.firstChild);
+        for (var i = 0; i < vBadges.length; i++) {
+          var b = vBadges[i];
+          if (!b || !b.label) continue;
+
+          var item = document.createElement('div');
+          item.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:4px;min-width:' + (sz + 16) + 'px;max-width:110px;';
+
+          var iconOuter = document.createElement('div');
+          var ob = (v.iconBgColor && v.iconBgColor !== '#ffffff') ? 'background-color:' + v.iconBgColor + ';' : '';
+          iconOuter.style.cssText = 'width:' + sz + 'px;height:' + sz + 'px;border-radius:' + (v.iconCornerRadius || 4) + 'px;display:flex;align-items:center;justify-content:center;flex-shrink:0;' + ob;
+
+          if (b.type === 'custom' && b.imageUrl) {
+            var img = document.createElement('img');
+            img.src = b.imageUrl; img.alt = b.label;
+            img.style.cssText = 'width:' + (sz - 4) + 'px;height:' + (sz - 4) + 'px;object-fit:contain;';
+            img.loading = 'lazy';
+            iconOuter.appendChild(img);
+          } else if (b.svg) {
+            try {
+              var svgEl = new DOMParser().parseFromString(b.svg, 'image/svg+xml').documentElement;
+              if (svgEl && svgEl.tagName === 'svg') {
+                var inner = document.createElement('div');
+                inner.style.cssText = 'width:' + (sz - 4) + 'px;height:' + (sz - 4) + 'px;color:' + (v.iconColor || '#333333') + ';';
+                inner.appendChild(document.importNode(svgEl, true));
+                iconOuter.appendChild(inner);
+              }
+            } catch(e) {}
+          }
+          item.appendChild(iconOuter);
+
+          var label = document.createElement('span');
+          label.style.cssText = 'font-size:' + (v.fontSize || 14) + 'px;font-weight:600;color:' + (v.textColor || '#202223') + ';text-align:center;line-height:1.2;';
+          label.textContent = b.label;
+          item.appendChild(label);
+
+          if (b.subtitle) {
+            var sub = document.createElement('span');
+            sub.style.cssText = 'font-size:' + (v.subtitleFontSize || 14) + 'px;font-weight:400;color:' + (v.subtitleColor || '#96a4b6') + ';text-align:center;line-height:1.3;';
+            sub.textContent = b.subtitle;
+            item.appendChild(sub);
+          }
+          wrapper.appendChild(item);
+        }
+        if (v.spacing) wrapper.style.gap = v.spacing + 'px';
+        if (v.maxWidth) container.style.maxWidth = v.maxWidth + 'px';
+      }
+    }
+
+    // Track conversion on add-to-cart (once per session)
+    var converted = false;
+    function trackConversion() {
+      if (converted) return;
+      converted = true;
+      track('conversion');
+    }
+    document.addEventListener('submit', function(e) {
+      var form = e.target;
+      if (form && form.action && form.action.indexOf('/cart/add') !== -1) trackConversion();
+    });
+    var origFetch = window.fetch;
+    if (origFetch) {
+      window.fetch = function() {
+        var u = arguments[0];
+        if (typeof u === 'string' && u.indexOf('/cart/add') !== -1) {
+          return origFetch.apply(this, arguments).then(function(r) { if (r.ok) trackConversion(); return r; });
+        }
+        return origFetch.apply(this, arguments);
+      };
+    }
+  } catch(e) { /* never break the storefront */ }
+})();
+</script>
+{% endif %}
 
 {% schema %}
 {

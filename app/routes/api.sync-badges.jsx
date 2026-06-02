@@ -1,7 +1,7 @@
 import { json } from "@remix-run/node";
 import { authenticate } from "../shopify.server";
 import prisma from "../db.server";
-import { syncMetafield, clearMetafield, shouldSync } from "../utils/sync-metafield";
+import { syncMetafield } from "../utils/sync-metafield";
 
 /**
  * API endpoint to sync badge config to shop metafield.
